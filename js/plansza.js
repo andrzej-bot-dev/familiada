@@ -185,11 +185,11 @@ function renderujIksy(iksy) {
 function renderujFaze(stan) {
   // Komunikat o buzzowaniu
   if (stan.fazaGry === STAN_GRY.POJEDYNEK && stan.ktoBuzznal) {
-    pokazKomunikat(`Drużyna ${stan.ktoBuzznal}!`, `druzyna-${stan.ktoBuzznal}`);
+    pokazKomunikat(`Drużyna ${stan.ktoBuzznal}!`, `druzyna-${stan.ktoBuzznal}`, 3000);
   } else if (stan.fazaGry === STAN_GRY.PRZEJECIE) {
     const [d1, d2] = stan.druzyny || [];
     const przejmujaca = stan.kontrola === d1?.id ? d2 : d1;
-    pokazKomunikat(`Przejęcie — ${przejmujaca?.nazwa || ''}!`, 'przejecie');
+    pokazKomunikat(`Przejęcie — ${przejmujaca?.nazwa || ''}!`, 'przejecie', 3000);
   } else if (stan.fazaGry === STAN_GRY.IDLE && stan.pytanieTekst) {
     // Pytanie widoczne, ale bez komunikatu
     ukryjKomunikat();
@@ -204,10 +204,16 @@ function renderujFaze(stan) {
   }
 }
 
-function pokazKomunikat(tresc, klasa) {
+function pokazKomunikat(tresc, klasa, autoUkryjMs) {
+  // Nie re-triggeruj jeśli ten sam komunikat już jest pokazany
+  if (elKomunikat.classList.contains('aktywny') && elKomunikatTresc.textContent === tresc) return;
   elKomunikatTresc.textContent = tresc;
   elKomunikatTresc.className = `komunikat-tresc ${klasa || ''}`;
   elKomunikat.classList.add('aktywny');
+  if (autoUkryjMs) {
+    clearTimeout(pokazKomunikat._timer);
+    pokazKomunikat._timer = setTimeout(() => elKomunikat.classList.remove('aktywny'), autoUkryjMs);
+  }
 }
 
 function ukryjKomunikat() {
