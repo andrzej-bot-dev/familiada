@@ -64,35 +64,32 @@ export class WebSerialTransport extends Transport {
 
   async _czytaj() {
     if (!this.port) return;
+    const decoder = new TextDecoder();
 
     try {
       while (this.keepReading) {
-        const decoder = new TextDecoderStream();
-        const closedPipe = this.port.readable.pipeTo(decoder.writable);
-        this.reader = decoder.readable.getReader();
-
+        this.reader = this.port.readable.getReader();
         try {
           while (this.keepReading) {
             const { done, value } = await this.reader.read();
             if (done) break;
-            this.buffer += value;
+            // value to Uint8Array — dekoduj ręcznie
+            this.buffer += decoder.decode(value, { stream: true });
             this._parsuj();
           }
         } catch (e) {
-          console.error('Błąd czytania serial:', e);
+          console.error('[Serial] Błąd czytania:', e);
         } finally {
-          this.reader.releaseLock();
+          try { this.reader.releaseLock(); } catch {}
           this.reader = null;
         }
 
-        // Czekaj na zamknięcie pipe przed ew. reconnect
-        await closedPipe.catch(() => {});
-
-        // Jeśli port nadal istnieje i chcemy czytać, spróbuj ponownie
         if (!this.keepReading || !this.port?.readable) break;
+        // Krótka pauza przed próbą ponownego czytania
+        await new Promise(r => setTimeout(r, 100));
       }
     } catch (e) {
-      console.error('Błąd strumienia serial:', e);
+      console.error('[Serial] Błąd strumienia:', e);
     } finally {
       this.polaczony = false;
       this.reader = null;
