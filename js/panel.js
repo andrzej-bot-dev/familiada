@@ -8,11 +8,10 @@ import { Historia } from './historia.js';
 import { Sync } from './sync.js';
 import { wczytajProfil, listaProfili, DOMYSLNY_PROFIL } from './konfiguracja.js';
 import { wczytajZestaw, wczytajIndeks, dajPytania, losujPytania } from './pytania.js';
-import { czyPrzejecie, czyWszystkoOdslonięte } from './zasady.js';
+import { czyPrzejecie, czyWszystkoOdslonięte, mnoznikDlaRundy } from './zasady.js';
 import { WebSerialTransport } from './transport/webserial.js';
 import { graj, ustawGlosnosc, ustawWlaczone, odblokujAudio, preload } from './audio.js';
 import { Debug } from './debug.js';
-import { mnoznikDlaRundy, czyWszystkoOdslonięte } from './zasady.js';
 import { Flow } from './flow.js';
 import { PanelUI } from './panel-ui.js';
 
