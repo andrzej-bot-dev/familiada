@@ -197,9 +197,22 @@ class Panel {
     this.historia.reset();
     this.stan = nowaGra(this.konfiguracja);
     this.biezacePytanieIdx = -1;
-    localStorage.removeItem('familiada-stan');
-    this._render();
+
+    // Ręcznie zapisz NOWY (pusty) stan do localStorage ZAMIAST removeItem
+    // (removeItem wysyła storage event z null którego plansza ignoruje)
+    localStorage.setItem('familiada-stan', JSON.stringify(this.stan));
+
+    // Wyślij przez BroadcastChannel
     this._wyslijStan();
+
+    // Dodatkowo wyślij komendę RESET planszy
+    this.sync.wyslijKomende('RESET_PLANSZY', {});
+
+    // Reset UI
+    const selP = document.getElementById('wybor-pytania');
+    if (selP) selP.value = '';
+
+    this._render();
   }
 
   cofnij() {

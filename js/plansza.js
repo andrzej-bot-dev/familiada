@@ -208,10 +208,18 @@ sync.on((msg) => {
       setTimeout(() => elEkranIntro.classList.add('ukryty'), 4000);
     } else if (msg.komenda === 'UKRYJ_INTRO') {
       elEkranIntro.classList.add('ukryty');
+    } else if (msg.komenda === 'RESET_PLANSZY') {
+      elPytanie.textContent = '';
+      elPytanie.classList.remove('aktywna');
+      elPola.innerHTML = '';
+      elBank.textContent = '0';
+      elIksy.innerHTML = '';
+      ukryjKomunikat();
+      elEkranKoniec.style.display = 'none';
+      elEkranIntro.classList.remove('ukryty');
     }
   } else if (msg.typ === 'ZADANIE_STANU') {
-    // Plansza dopiero otwarta — wyślij stan jeśli mamy
-    // (zwykle panel odpowiada, plansza prosi)
+    // Plansza dopiero otwarta — panel odpowie
   }
 });
 
@@ -225,6 +233,21 @@ try {
     renderuj(JSON.parse(zapisany));
   }
 } catch {}
+
+// === Auto-sync: sprawdzaj localStorage co 1.5s ===
+// (fallback gdy BroadcastChannel nie dotrze między oknami)
+let _ostatniHash = '';
+setInterval(() => {
+  try {
+    const zapisany = localStorage.getItem('familiada-stan');
+    if (!zapisany) return;
+    const hash = zapisany.length + ':' + zapisany.substring(0, 60);
+    if (hash !== _ostatniHash) {
+      _ostatniHash = hash;
+      renderuj(JSON.parse(zapisany));
+    }
+  } catch {}
+}, 1500);
 
 // === Kursor auto-ukryj ===
 function resetKursor() {
