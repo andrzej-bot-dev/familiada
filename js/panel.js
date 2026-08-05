@@ -456,10 +456,21 @@ class Panel {
 
   _wypelnijZestawy(zestawy) {
     this.zestawy = zestawy;
+    const sel = document.getElementById('wybor-zestawu');
+    if (sel) {
+      sel.innerHTML = zestawy.map((z, i) =>
+        `<option value="${i}">${z.nazwa}</option>`
+      ).join('');
+    }
   }
 
   _wypelnijPytania() {
-    // Tylko triggeruje _renderPytania
+    const sel = document.getElementById('wybor-pytania');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— wybierz pytanie —</option>' +
+      this.pytania.map((p, i) =>
+        `<option value="${i}">${i + 1}. ${p.pytanie}</option>`
+      ).join('');
   }
 
   // === Podłączanie UI ===
@@ -494,6 +505,17 @@ class Panel {
     $('wybor-pytania').onchange = (e) => {
       const idx = parseInt(e.target.value, 10);
       if (!isNaN(idx)) this.wybierzPytanie(idx);
+    };
+
+    // Zestaw select
+    $('wybor-zestawu').onchange = async (e) => {
+      const idx = parseInt(e.target.value, 10);
+      if (isNaN(idx)) return;
+      const zestaw = this.zestawy[idx];
+      if (!zestaw) return;
+      await wczytajZestaw(zestaw.plik);
+      this.pytania = dajPytania();
+      this._wypelnijPytania();
     };
 
     // Profil select

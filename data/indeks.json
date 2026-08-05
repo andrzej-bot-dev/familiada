@@ -1,59 +1,15 @@
 {
   "profile": [
-    {
-      "plik": "domyslny",
-      "nazwa": "Domyślny"
-    },
-    {
-      "plik": "wesele",
-      "nazwa": "Wesele"
-    },
-    {
-      "plik": "urodziny",
-      "nazwa": "Urodziny"
-    },
-    {
-      "plik": "firmowa",
-      "nazwa": "Impresa firmowa"
-    }
+    { "plik": "domyslny", "nazwa": "Domyślny" },
+    { "plik": "wesele", "nazwa": "Wesele" },
+    { "plik": "urodziny", "nazwa": "Urodziny" },
+    { "plik": "firmowa", "nazwa": "Impreza firmowa" }
   ],
   "zestawy": [
-    {
-      "plik": "ogolny",
-      "nazwa": "Ogólny (12 pytań)"
-    },
-    {
-      "plik": "wesele",
-      "nazwa": "Wesele (6 pytań)"
-    },
-    {
-      "plik": "testowy",
-      "nazwa": "Testowy (3 krótkie)"
-    },
-    {
-      "plik": "ogolny.json",
-      "nazwa": "Familiada Ogólna",
-      "opis": "Uniwersalne pytania na każdą okazję"
-    },
-    {
-      "plik": "smieszny.json",
-      "nazwa": "Familiada Śmieszna",
-      "opis": "Śmieszne i absurdalne pytania na imprezę"
-    },
-    {
-      "plik": "dawid.json",
-      "nazwa": "Znajomość Pana Młodego",
-      "opis": "Pytania o Dawida — sprawdź jak go znasz!"
-    },
-    {
-      "plik": "wesele.json",
-      "nazwa": "Familiada Weselna",
-      "opis": "Pytania weselne"
-    },
-    {
-      "plik": "testowy.json",
-      "nazwa": "Zestaw testowy",
-      "opis": "Krótki zestaw do testów"
-    }
+    { "plik": "ogolny", "nazwa": "Ogólny (12 pytań)", "opis": "Uniwersalne pytania na każdą okazję" },
+    { "plik": "smieszny", "nazwa": "Śmieszny (10 pytań)", "opis": "Śmieszne i absurdalne pytania na imprezę" },
+    { "plik": "dawid", "nazwa": "Znajomość Pana Młodego (12 pytań)", "opis": "Pytania o Dawida — sprawdź jak go znasz!" },
+    { "plik": "wesele", "nazwa": "Wesele (6 pytań)", "opis": "Pytania weselne" },
+    { "plik": "testowy", "nazwa": "Testowy (3 pytania)", "opis": "Krótki zestaw do testów" }
   ]
 }

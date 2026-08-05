@@ -20,7 +20,8 @@ export async function wczytajIndeks() {
 /** Wczytaj zestaw pytań z pliku JSON */
 export async function wczytajZestaw(nazwaPliku) {
   try {
-    const res = await fetch(`data/zestawy/${nazwaPliku}.json`);
+    const safeName = nazwaPliku.endsWith('.json') ? nazwaPliku : `${nazwaPliku}.json`;
+    const res = await fetch(`data/zestawy/${safeName}`);
     if (!res.ok) throw new Error(`Nie znaleziono zestawu: ${nazwaPliku}`);
     const zestaw = await res.json();
     biezacyZestaw = zestaw;
