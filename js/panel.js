@@ -45,6 +45,20 @@ class Panel {
     preload(this.konfiguracja.audio?.mapowanie);
     this._podlaczUI();
     this._render();
+
+    // USB disconnect handler
+    if ('serial' in navigator) {
+      navigator.serial.addEventListener('disconnect', (e) => {
+        if (this.transport?.port === e.target) {
+          console.warn('[USB] Host odłączony!');
+          this.debug.log('USB DISCONNECT!');
+          this.transport.polaczony = false;
+          this.transport = null;
+          this._render();
+          alert('Połączenie USB zostało przerwane! Podłącz hosta ponownie i kliknij Połącz.');
+        }
+      });
+    }
   }
 
   // ===== Połączenie =====
@@ -146,15 +160,15 @@ class Panel {
 
   // ===== Buzz =====
   _buzz(druzyna) {
-    if (this.stan.stanBuzzera !== STAN_BUZZERA.ARMED) return;
+    if (!this.stan || this.stan.stanBuzzera !== STAN_BUZZERA.ARMED) return;
     this.dispatch({ typ: 'BUZZ', druzyna });
-    const audioMap = this.konfiguracja.audio?.mapowanie || {};
-    graj(audioMap.buzz);
+    // Bez dźwięku przy buzzie — buzz = drużyna odpowiada, nie błąd
     this.debug.log(`BUZZ:${druzyna}`);
   }
 
   // ===== Akcje gry =====
   uzbroj() {
+    if (!this.stan?.pytanieTekst) return;
     this.dispatch({ typ: 'UZBROJ' });
     if (this.transport?.polaczony) this.transport.wyslij('a');
     this.debug.log('a wysłane (arm)');
@@ -167,14 +181,19 @@ class Panel {
   }
 
   wybierzPytanie(idx) {
-    if (idx >= this.pytania.length) return;
+    if (idx < 0 || idx >= this.pytania.length) return;
     this.biezacePytanieIdx = idx;
     const p = this.pytania[idx];
     if (!p) return;
     const rundIndex = this.stan.runda;
     const mnoznik = mnoznikDlaRundy(this.konfiguracja, rundIndex);
-    this.dispatch({ typ: 'WYBIERZ_PYTANIE', pytanie: p, runda: rundIndex, mnoznik });
-    this.dispatch({ typ: 'OZNACZ_PYTANIE_UZYTE', pytanieId: p.id });
+    // Połącz oba dispatche w jeden — OZNACZ bez zapisu historii
+    this.historia.zapisz(this.stan);
+    this.stan = reducer(this.stan, { typ: 'WYBIERZ_PYTANIE', pytanie: p, runda: rundIndex, mnoznik });
+    this.stan = reducer(this.stan, { typ: 'OZNACZ_PYTANIE_UZYTE', pytanieId: p.id });
+    this._render();
+    this._wyslijStan();
+    this._zapiszLocal();
   }
 
   odslonOdpowiedz(id) {
@@ -264,14 +283,40 @@ class Panel {
   przejecieAkcja() {
     const [d1, d2] = this.stan.druzyny;
     const przejmujaca = this.stan.kontrola === d1?.id ? d2 : d1;
-    this.stan.odpowiedzi.forEach(o => {
-      if (!o.odslonieta) this.dispatch({ typ: 'ODSLON_ODPOWIEDZ', id: o.id });
-    });
-    this.bankDlaDruzyny(przejmujaca.id);
+    // Jeden zapis historii, jeden dispatch — odsłoń wszystko + bank
+    this.historia.zapisz(this.stan);
+    const nowyStan = { ...this.stan };
+    nowyStan.odpowiedzi = this.stan.odpowiedzi.map(o => ({ ...o, odslonieta: true }));
+    // Policz bank z nowo odsłoniętych
+    const dodatkowe = this.stan.odpowiedzi.filter(o => !o.odslonieta).reduce((s, o) => s + (o.punkty || 0) * (nowyStan.mnoznikRundy || 1), 0);
+    nowyStan.bank = this.stan.bank + dodatkowe;
+    nowyStan.fazaGry = STAN_GRY.KONIEC_RUNDY;
+    // Daj bank drużynie przejmującej
+    nowyStan.druzyny = nowyStan.druzyny.map(d =>
+      d.id === przejmujaca.id ? { ...d, suma: d.suma + nowyStan.bank } : d
+    );
+    nowyStan.bank = 0;
+    this.stan = nowyStan;
+    this._render();
+    this._wyslijStan();
+    this._zapiszLocal();
+    const audioMap = this.konfiguracja.audio?.mapowanie || {};
+    graj(audioMap.poprawna);
   }
 
   obronaAkcja() {
-    this.bankDlaDruzyny(this.stan.kontrola);
+    // Pudło w przejęciu → bank dla drużyny broniącej (kontrola)
+    this.historia.zapisz(this.stan);
+    const nowyStan = { ...this.stan, fazaGry: STAN_GRY.KONIEC_RUNDY };
+    const broniaca = this.stan.druzyny.find(d => d.id === this.stan.kontrola) || this.stan.druzyny[0];
+    nowyStan.druzyny = nowyStan.druzyny.map(d =>
+      d.id === broniaca.id ? { ...d, suma: d.suma + this.stan.bank } : d
+    );
+    nowyStan.bank = 0;
+    this.stan = nowyStan;
+    this._render();
+    this._wyslijStan();
+    this._zapiszLocal();
   }
 
   zmienZestaw() {
@@ -415,11 +460,11 @@ class Panel {
       return;
     }
     el.innerHTML = this.stan.odpowiedzi.map((o, i) => `
-      <div class="odpowiedz-wiersz ${o.odslonieta ? 'odslonieta' : ''}" data-id="${o.id}">
+      <div class="odpowiedz-wiersz ${o.odslonieta ? 'odslonieta' : 'nieodslonieta'}" data-id="${o.id}">
         <div class="odpowiedz-numer">${i + 1}</div>
-        <div class="odpowiedz-tekst">${o.odslonieta ? o.tekst : '???'}</div>
-        <div class="odpowiedz-punkty">${o.odslonieta ? o.punkty : ''}</div>
-        <div class="odpowiedz-akcja">${o.odslonieta ? '✓' : 'odsłoń →'}</div>
+        <div class="odpowiedz-tekst">${o.tekst}</div>
+        <div class="odpowiedz-punkty">${o.punkty} pkt</div>
+        <div class="odpowiedz-akcja">${o.odslonieta ? '✓ na planszy' : '📁 odsłoń'}</div>
       </div>
     `).join('');
 
@@ -707,8 +752,8 @@ class Panel {
 
       if (klucz === 'F1') { e.preventDefault(); $('overlay-pomoc').style.display = 'flex'; return; }
       if (klucz === 'F9') { e.preventDefault(); this.debug.toggle(); return; }
-      if (klucz === 'F2') { e.preventDefault(); this._buzz(1); return; }
-      if (klucz === 'F3') { e.preventDefault(); this._buzz(2); return; }
+      if (klucz === 'F2') { e.preventDefault(); if (this.transport?.polaczony) this._buzz(1); return; }
+      if (klucz === 'F3') { e.preventDefault(); if (this.transport?.polaczony) this._buzz(2); return; }
 
       if (e.ctrlKey && klucz === 'KeyZ') { e.preventDefault(); this.cofnij(); return; }
       if (e.ctrlKey && (klucz === 'KeyY' || (e.shiftKey && klucz === 'KeyZ'))) { e.preventDefault(); this.przywroc(); return; }
@@ -716,8 +761,8 @@ class Panel {
       // Nie blokuj skrótów przeglądarki (Ctrl+R, Ctrl+F5, etc.)
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-      // Poniższe tylko gdy jesteśmy połączeni i w grze
-      if (!this.transport?.polaczony) return;
+      // Poniższe tylko gdy jesteśmy w grze
+      if (!this.transport?.polaczony || !this.stan?.pytanieTekst) return;
 
       if (klucz === 'Space') { e.preventDefault(); this.uzbroj(); return; }
       if (klucz === 'KeyR') { e.preventDefault(); this.resetBuzzer(); return; }

@@ -9,11 +9,11 @@ let wszystkiePytania = [];
 export async function wczytajIndeks() {
   try {
     const res = await fetch('data/indeks.json');
-    if (!res.ok) return [{ plik: 'testowy', nazwa: 'Testowy' }];
+    if (!res.ok) return [];
     const indeks = await res.json();
-    return indeks.zestawy || [{ plik: 'testowy', nazwa: 'Testowy' }];
+    return indeks.zestawy || [];
   } catch {
-    return [{ plik: 'testowy', nazwa: 'Testowy' }];
+    return [];
   }
 }
 

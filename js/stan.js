@@ -73,6 +73,7 @@ export function reducer(stan, akcja) {
     }
 
     case 'WYBIERZ_PYTANIE':
+      if (!akcja.pytanie) return stan;
       return {
         ...stan,
         pytanieId: akcja.pytanie.id,
