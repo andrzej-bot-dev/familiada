@@ -130,14 +130,14 @@ class Panel {
   // === Akcje ===
   uzbroj() {
     this.dispatch({ typ: 'UZBROJ' });
-    this.transport.wyslij('ARM');
-    this.debug.log('ARM wysłane');
+    this.transport.wyslij('a');
+    this.debug.log('a wysłane (arm)');
   }
 
   resetBuzzer() {
     this.dispatch({ typ: 'RESET_BUZZER' });
-    this.transport.wyslij('RESET');
-    this.debug.log('RESET wysłany');
+    this.transport.wyslij('r');
+    this.debug.log('r wysłane (reset)');
   }
 
   wybierzPytanie(idx) {

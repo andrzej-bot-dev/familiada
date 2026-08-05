@@ -227,8 +227,8 @@
       console.log('[Debug] Rozłączono');
     };
 
-    document.getElementById('btn-send-arm').onclick = () => sendCmd('ARM');
-    document.getElementById('btn-send-reset').onclick = () => sendCmd('RESET');
+    document.getElementById('btn-send-arm').onclick = () => sendCmd('a');
+    document.getElementById('btn-send-reset').onclick = () => sendCmd('r');
     document.getElementById('btn-send-custom').onclick = () => {
       const cmd = document.getElementById('custom-cmd').value.trim();
       if (cmd) sendCmd(cmd);

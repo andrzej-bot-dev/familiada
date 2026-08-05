@@ -124,21 +124,26 @@ export class WebSerialTransport extends Transport {
 
   _obslozLinie(linia) {
     console.log('[Serial] ←', linia);
-    // Toleruj hosta który wysyła cokolwiek
-    if (linia.startsWith('BUZZ:')) {
-      const n = parseInt(linia.substring(5), 10);
-      if (!isNaN(n) && n > 0) {
-        console.log(`[Serial] Buzz drużyny ${n}!`);
-        this._emitBuzz(n);
+    const l = linia.trim();
+
+    // Format oryginalny: "ZWYCIEZCA: Buzzer 1"
+    if (l.startsWith('ZWYCIEZCA')) {
+      const m = l.match(/(\d+)/);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n > 0) { console.log(`[Serial] Buzz drużyny ${n}!`); this._emitBuzz(n); }
       }
-    } else if (linia === 'READY') {
-      console.log('[Serial] Host gotowy');
-    } else if (linia.startsWith('ACK:')) {
-      // potwierdzenie — ignorujemy
-    } else if (linia === 'PONG') {
-      // ping response — ignorujemy
-    } else {
-      console.log('[Serial] Nieznana linia:', linia);
     }
+    // Format nowszy: "BUZZ:1"
+    else if (l.startsWith('BUZZ:')) {
+      const n = parseInt(l.substring(5), 10);
+      if (!isNaN(n) && n > 0) { console.log(`[Serial] Buzz drużyny ${n}!`); this._emitBuzz(n); }
+    }
+    else if (l === 'READY') { console.log('[Serial] Host gotowy'); }
+    else if (l.startsWith('ACK:') || l.startsWith('ARMED') || l.startsWith('RESET')) {
+      console.log('[Serial] ACK:', l);
+    }
+    else if (l === 'PONG') { console.log('[Serial] PONG'); }
+    else { console.log('[Serial] Inne:', l); }
   }
 }
