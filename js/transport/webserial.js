@@ -42,10 +42,7 @@ export class WebSerialTransport extends Transport {
       await this.reader.cancel().catch(() => {});
       this.reader = null;
     }
-    if (this.writer) {
-      await this.writer.releaseLock().catch(() => {});
-      this.writer = null;
-    }
+    // Writer nie jest trzymany permanentnie — nie zwalniamy
     if (this.port) {
       await this.port.close().catch(() => {});
     }
@@ -55,32 +52,47 @@ export class WebSerialTransport extends Transport {
   async wyslij(komenda) {
     if (!this.port || !this.polaczony) return;
     try {
-      if (!this.writer) {
-        this.writer = this.port.writable.getWriter();
-      }
+      // Zwróć writer po każdym wysłaniu — nie trzymaj permanentnie
+      const writer = this.port.writable.getWriter();
       const dane = new TextEncoder().encode(komenda + '\n');
-      await this.writer.write(dane);
+      await writer.write(dane);
+      writer.releaseLock();
     } catch (e) {
       console.error('Błąd wysyłania:', e);
-      this.writer = null;
     }
   }
 
   async _czytaj() {
     if (!this.port) return;
-    const decoder = new TextDecoderStream();
-    this.port.readable.pipeTo(decoder.writable).catch(() => {});
-    this.reader = decoder.readable.getReader();
 
     try {
       while (this.keepReading) {
-        const { done, value } = await this.reader.read();
-        if (done) break;
-        this.buffer += value;
-        this._parsuj();
+        const decoder = new TextDecoderStream();
+        const closedPipe = this.port.readable.pipeTo(decoder.writable);
+        this.reader = decoder.readable.getReader();
+
+        try {
+          while (this.keepReading) {
+            const { done, value } = await this.reader.read();
+            if (done) break;
+            this.buffer += value;
+            this._parsuj();
+          }
+        } catch (e) {
+          console.error('Błąd czytania serial:', e);
+        } finally {
+          this.reader.releaseLock();
+          this.reader = null;
+        }
+
+        // Czekaj na zamknięcie pipe przed ew. reconnect
+        await closedPipe.catch(() => {});
+
+        // Jeśli port nadal istnieje i chcemy czytać, spróbuj ponownie
+        if (!this.keepReading || !this.port?.readable) break;
       }
     } catch (e) {
-      console.error('Błąd czytania serial:', e);
+      console.error('Błąd strumienia serial:', e);
     } finally {
       this.polaczony = false;
       this.reader = null;
@@ -98,10 +110,12 @@ export class WebSerialTransport extends Transport {
   }
 
   _obslozLinie(linia) {
+    console.log('[Serial] ←', linia);
     // Toleruj hosta który wysyła cokolwiek
     if (linia.startsWith('BUZZ:')) {
       const n = parseInt(linia.substring(5), 10);
       if (!isNaN(n) && n > 0) {
+        console.log(`[Serial] Buzz drużyny ${n}!`);
         this._emitBuzz(n);
       }
     } else if (linia === 'READY') {
