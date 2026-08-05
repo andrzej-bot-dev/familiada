@@ -96,6 +96,9 @@ export function reducer(stan, akcja) {
       };
 
     case 'ODSLON_ODPOWIEDZ': {
+      // Guard: nie dodawaj punktów jeśli już odsłonięta (defense in depth)
+      const juzOdslonieta = stan.odpowiedzi.find(o => o.id === akcja.id)?.odslonieta;
+      if (juzOdslonieta) return stan;
       const odpowiedzi = stan.odpowiedzi.map(o =>
         o.id === akcja.id ? { ...o, odslonieta: true } : o
       );

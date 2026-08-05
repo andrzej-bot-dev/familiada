@@ -8,6 +8,7 @@ import { Historia } from './historia.js';
 import { Sync } from './sync.js';
 import { wczytajProfil, listaProfili, DOMYSLNY_PROFIL } from './konfiguracja.js';
 import { wczytajZestaw, wczytajIndeks, dajPytania, losujPytania } from './pytania.js';
+import { czyPrzejecie } from './zasady.js';
 import { WebSerialTransport } from './transport/webserial.js';
 import { graj, ustawGlosnosc, ustawWlaczone, odblokujAudio, preload } from './audio.js';
 import { Debug } from './debug.js';
@@ -330,6 +331,10 @@ class Panel {
     if (nowy) {
       this.stan = nowy;
       this.flow.reset();
+      // Re-fire auto-transitions jeśli undo przywróciło stan z 3 IKS
+      if (this.stan.fazaGry === STAN_GRY.GRA && czyPrzejecie(this.stan)) {
+        this.stan = reducer(this.stan, { typ: 'ZMIEN_FAZE', faza: STAN_GRY.PRZEJECIE });
+      }
       this.ui.render();
       this._wyslijStan();
       this._zapiszLocal();
@@ -447,10 +452,16 @@ class Panel {
         if (this.stan.fazaGry === STAN_GRY.IDLE) this.uzbroj();
         return;
       }
-      if (klucz === 'KeyR') { e.preventDefault(); this.resetBuzzer(); return; }
+      if (klucz === 'KeyR') {
+        e.preventDefault();
+        // RESET buzera tylko w IDLE lub ARMED — nie w trakcie gry
+        if (this.stan.fazaGry === STAN_GRY.IDLE || this.stan.stanBuzzera === STAN_BUZZERA.ARMED) this.resetBuzzer();
+        return;
+      }
       if (klucz === 'KeyX') {
         e.preventDefault();
-        // IKS tylko w GRA (po pojedynku) lub POJEDYNEK
+        // IKS tylko w GRA (po pojedynku) lub POJEDYNEK, max 3 w normalnej grze
+        if (this.stan.iksy.length >= 3 && !this.flow?.pojedynek) return;
         if (this.stan.fazaGry === STAN_GRY.GRA || this.flow?.pojedynek) this.dodajIks();
         return;
       }

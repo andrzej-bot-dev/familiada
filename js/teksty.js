@@ -130,7 +130,7 @@ export function actionSub(stan, pojedynek, przejecieOdpowiedz) {
   // Normalna gra
   const ktoGra = stan.druzyny.find(d => d.id === stan.kontrola) || d1;
   const pozostale = stan.odpowiedzi.filter(o => !o.odslonieta).length;
-  return `${ktoGra?.nazwa} zgaduje. Pozostało ${pozostałe} odpowiedzi. ${iksy}/3 IKS — po 3 przejęcie.`;
+  return `${ktoGra?.nazwa} zgaduje. Pozostało ${pozostale} odpowiedzi. ${iksy}/3 IKS — po 3 przejęcie.`;
 }
 
 /**
