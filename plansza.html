@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Familiada — Plansza</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/plansza.css">
+</head>
+<body>
+  <div id="plansza" class="plansza">
+    <!-- Górny pasek: tytuł + rundy -->
+    <header class="pasek-gora">
+      <div class="tytul-wydarzenia" id="tytul-wydarzenia">Familiada</div>
+      <div class="runda-info">
+        <span class="runda-tekst" id="runda-tekst"></span>
+        <span class="mnoznik" id="mnoznik-tekst"></span>
+      </div>
+    </header>
+
+    <!-- Główny obszar: pytanie + pola -->
+    <main class="plansza-glowna">
+      <div class="pytanie" id="pytanie-tekst"></div>
+
+      <div class="pola" id="pola-container">
+        <!-- Pola odpowiedzi generowane dynamicznie -->
+      </div>
+
+      <!-- Komunikat buzzer / przejęcie -->
+      <div class="komunikat-overlay" id="komunikat-overlay">
+        <div class="komunikat-tresc" id="komunikat-tresc"></div>
+      </div>
+
+      <!-- Iksy -->
+      <div class="iksy-container" id="iksy-container"></div>
+    </main>
+
+    <!-- Dolny pasek: bank + drużyny -->
+    <footer class="pasek-dol">
+      <div class="druzyna d1" id="druzyna-1">
+        <div class="druzyna-nazwa" id="d1-nazwa">Drużyna 1</div>
+        <div class="druzyna-suma" id="d1-suma">0</div>
+      </div>
+      <div class="bank-container" id="bank-container">
+        <div class="bank-label">BANK</div>
+        <div class="bank-wartosc" id="bank-wartosc">0</div>
+      </div>
+      <div class="druzyna d2" id="druzyna-2">
+        <div class="druzyna-nazwa" id="d2-nazwa">Drużyna 2</div>
+        <div class="druzyna-suma" id="d2-suma">0</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Ekran intro -->
+  <div id="ekran-intro" class="ekran-intro">
+    <div class="intro-tytul" id="intro-tytul">Familiada</div>
+    <div class="intro-podtytul" id="intro-podtytul"></div>
+  </div>
+
+  <!-- Ekran końcowy -->
+  <div id="ekran-koniec" class="ekran-koniec" style="display:none">
+    <div class="koniec-tytul">Koniec gry!</div>
+    <div class="koniec-zwyciezca" id="koniec-zwyciezca"></div>
+  </div>
+
+  <script type="module" src="js/plansza.js"></script>
+</body>
+</html>

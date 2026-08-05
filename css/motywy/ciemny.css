@@ -1,0 +1,9 @@
+/* Motyw ciemny */
+[data-motyw="ciemny"] {
+  --kolor-tla: #000000;
+  --kolor-tla-panel: #0a0a0a;
+  --kolor-tla-karty: #1a1a1a;
+  --kolor-akcent: #fbbf24;
+  --kolor-akcent-2: #f59e0b;
+  --kolor-border: #333333;
+}

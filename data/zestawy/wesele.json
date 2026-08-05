@@ -1,0 +1,72 @@
+{
+  "nazwa": "Familiada Weselna",
+  "opis": "Pytania na wesele",
+  "pytania": [
+    {
+      "id": "w1",
+      "pytanie": "Co robi się na weselu?",
+      "odpowiedzi": [
+        { "tekst": "Tańczy się", "punkty": 38 },
+        { "tekst": "Je się", "punkty": 24 },
+        { "tekst": "Pije się", "punkty": 18 },
+        { "tekst": "Bawi się / śpiewa", "punkty": 12 },
+        { "tekst": "Składa życzenia", "punkty": 8 }
+      ]
+    },
+    {
+      "id": "w2",
+      "pytanie": "Podaj typowy prezent ślubny.",
+      "odpowiedzi": [
+        { "tekst": "Pieniądze / koperta", "punkty": 45 },
+        { "tekst": "Sprzęt AGD do domu", "punkty": 20 },
+        { "tekst": "Wazon / porcelana", "punkty": 14 },
+        { "tekst": "Voucher / podróż", "punkty": 12 },
+        { "tekst": "Pościel / ręczniki", "punkty": 9 }
+      ]
+    },
+    {
+      "id": "w3",
+      "pytanie": "Co panna młoda robi przed ślubem?",
+      "odpowiedzi": [
+        { "tekst": "Fryzjer / makijaż", "punkty": 40 },
+        { "tekst": "Stresuje się", "punkty": 22 },
+        { "tekst": "Ubiera suknię", "punkty": 18 },
+        { "tekst": "Pije lampkę na odwagę", "punkty": 11 },
+        { "tekst": "Płacze ze wzruszenia", "punkty": 9 }
+      ]
+    },
+    {
+      "id": "w4",
+      "pytanie": "Bez czego nie ma dobrej imprezy weselnej?",
+      "odpowiedzi": [
+        { "tekst": "Bez dobrej muzyki / DJ-a", "punkty": 35 },
+        { "tekst": "Bez jedzenia", "punkty": 25 },
+        { "tekst": "Bez alkoholu", "punkty": 20 },
+        { "tekst": "Bez dobrego towarzystwa", "punkty": 13 },
+        { "tekst": "Bez wodzireja", "punkty": 7 }
+      ]
+    },
+    {
+      "id": "w5",
+      "pytanie": "Co goście krzyczą do pary młodej?",
+      "odpowiedzi": [
+        { "tekst": "Gorzko, gorzko!", "punkty": 34 },
+        { "tekst": "Sto lat", "punkty": 26 },
+        { "tekst": "Gratulacje", "punkty": 22 },
+        { "tekst": "Wszystkiego najlepszego", "punkty": 12 },
+        { "tekst": "Kiedy dzieci?", "punkty": 6 }
+      ]
+    },
+    {
+      "id": "w6",
+      "pytanie": "Gdzie państwo młodzi jadą w podróż poślubną?",
+      "odpowiedzi": [
+        { "tekst": "Egzotyka / nad morze", "punkty": 30 },
+        { "tekst": "Włochy", "punkty": 20 },
+        { "tekst": "Grecja", "punkty": 18 },
+        { "tekst": "Zostają w domu", "punkty": 16 },
+        { "tekst": "W góry", "punkty": 16 }
+      ]
+    }
+  ]
+}

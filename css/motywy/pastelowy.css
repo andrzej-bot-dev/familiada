@@ -1,0 +1,12 @@
+/* Motyw pastelowy */
+[data-motyw="pastelowy"] {
+  --kolor-tla: #1e1b3a;
+  --kolor-tla-panel: #2a2654;
+  --kolor-tla-karty: #3a3568;
+  --kolor-akcent: #f0abfc;
+  --kolor-akcent-2: #c084fc;
+  --kolor-dobrze: #86efac;
+  --kolor-zle: #fca5a5;
+  --kolor-zloto: #fde68a;
+  --kolor-border: #4a4578;
+}

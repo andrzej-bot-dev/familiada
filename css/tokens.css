@@ -1,0 +1,74 @@
+/* ===== TOKENY CSS — Familiada ===== */
+/* Wszystkie kolory, rozmiary, fonty jako custom properties */
+
+:root {
+  /* Kolory bazowe — motyw klasyczny (niebieski) */
+  --kolor-tla: #0a0e27;
+  --kolor-tla-panel: #111936;
+  --kolor-tla-karty: #1a2347;
+  --kolor-tla-karty-hover: #243168;
+  --kolor-tekst: #ffffff;
+  --kolor-tekst-dim: #8899bb;
+  --kolor-akcent: #22d3ee;
+  --kolor-akcent-2: #3b82f6;
+  --kolor-dobrze: #22c55e;
+  --kolor-zle: #ef4444;
+  --kolor-zloto: #fbbf24;
+  --kolor-border: #2a3858;
+
+  /* Kolory drużyn (nadpisywane z profilu) */
+  --kolor-d1: #3b82f6;
+  --kolor-d2: #ef4444;
+
+  /* Fonty */
+  --font-glowny: 'Arial', 'Helvetica', sans-serif;
+
+  /* Rozmiary planszy */
+  --plansza-szer: 100vw;
+  --plansza-wys: 100vh;
+  --plansza-tytul-rozmiar: clamp(2rem, 4vw, 4rem);
+  --plansza-pytanie-rozmiar: clamp(1.2rem, 2.5vw, 2.5rem);
+  --plansza-odpowiedz-rozmiar: clamp(1rem, 2vw, 2rem);
+  --plansza-punkty-rozmiar: clamp(1.5rem, 3vw, 3rem);
+  --plansza-bank-rozmiar: clamp(2rem, 4vw, 4rem);
+
+  /* Panel */
+  --panel-przycisk-wys: 60px;
+  --panel-przycisk-rozmiar: clamp(0.9rem, 1.2vw, 1.1rem);
+  --panel-border-radius: 10px;
+  --panel-padding: 12px;
+
+  /* Animacje */
+  --anim-szybka: 200ms;
+  --anim-srednia: 400ms;
+  --anim-max: 600ms;
+
+  /* Cienie */
+  --cien-karty: 0 4px 20px rgba(0,0,0,0.4);
+  --cien-akcent: 0 0 30px rgba(34,211,238,0.3);
+}
+
+/* Motyw ciemny */
+[data-motyw="ciemny"] {
+  --kolor-tla: #000000;
+  --kolor-tla-panel: #0a0a0a;
+  --kolor-tla-karty: #1a1a1a;
+  --kolor-tla-karty-hover: #2a2a2a;
+  --kolor-akcent: #fbbf24;
+  --kolor-akcent-2: #f59e0b;
+  --kolor-border: #333333;
+}
+
+/* Motyw pastelowy */
+[data-motyw="pastelowy"] {
+  --kolor-tla: #1e1b3a;
+  --kolor-tla-panel: #2a2654;
+  --kolor-tla-karty: #3a3568;
+  --kolor-tla-karty-hover: #4a4578;
+  --kolor-akcent: #f0abfc;
+  --kolor-akcent-2: #c084fc;
+  --kolor-dobrze: #86efac;
+  --kolor-zle: #fca5a5;
+  --kolor-zloto: #fde68a;
+  --kolor-border: #4a4578;
+}

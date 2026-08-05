@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Familiada — Start</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <style>
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: var(--kolor-tla); color: var(--kolor-tekst); font-family: var(--font-glowny);
+      flex-direction: column; gap: 20px;
+    }
+    h1 { font-size: clamp(2rem, 5vw, 4rem); margin: 0; text-align: center; }
+    .podtytul { color: var(--kolor-akcent); font-size: clamp(1rem, 2vw, 1.5rem); }
+    .menu { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+    .karta {
+      background: var(--kolor-tla-karty); border: 2px solid var(--kolor-border);
+      border-radius: 16px; padding: 30px; min-width: 220px; text-align: center;
+      text-decoration: none; color: var(--kolor-tekst); transition: all var(--anim-szybka);
+      cursor: pointer;
+    }
+    .karta:hover { background: var(--kolor-tla-karty-hover); border-color: var(--kolor-akcent); transform: translateY(-4px); }
+    .karta .ikon { font-size: 3rem; display: block; margin-bottom: 10px; }
+    .karta .label { font-size: 1.3rem; font-weight: bold; }
+    .karta .opis { color: var(--kolor-tekst-dim); font-size: 0.9rem; margin-top: 6px; }
+    .info { color: var(--kolor-tekst-dim); font-size: 0.85rem; margin-top: 30px; text-align: center; max-width: 600px; }
+    .brak-ws { background: var(--kolor-zle); padding: 8px 16px; border-radius: 8px; display: none; }
+  </style>
+</head>
+<body>
+  <h1>🎪 Familiada</h1>
+  <div class="podtytul">Wybierz widok:</div>
+
+  <div id="brak-ws" class="brak-ws">⚠ Web Serial API niedostępne — użyj Chrome lub Edge aby połączyć się z hostem. Panel działa w trybie demonstracyjnym.</div>
+
+  <div class="menu">
+    <a href="panel.html" class="karta">
+      <span class="ikon">🎮</span>
+      <span class="label">Panel prowadzącego</span>
+      <span class="opis">Sterowanie grą</span>
+    </a>
+    <a href="plansza.html" class="karta">
+      <span class="ikon">📺</span>
+      <span class="label">Plansza</span>
+      <span class="opis">Ekran rzutnika</span>
+    </a>
+    <a href="edytor.html" class="karta">
+      <span class="ikon">📝</span>
+      <span class="label">Edytor pytań</span>
+      <span class="opis">Twórz zestawy</span>
+    </a>
+  </div>
+
+  <div class="info">
+    Otwórz <b>Panel</b> i <b>Planszę</b> w osobnych kartach/oknach.<br>
+    Planszę wrzuć na rzutnik (F11 = pełny ekran).<br>
+    Skróty klawiszowe: <b>F1</b> = pomoc, <b>F9</b> = debug.
+  </div>
+
+  <script>
+    if (!('serial' in navigator)) {
+      document.getElementById('brak-ws').style.display = 'block';
+    }
+  </script>
+</body>
+</html>

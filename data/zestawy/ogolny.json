@@ -1,0 +1,138 @@
+{
+  "nazwa": "Familiada Ogólna",
+  "opis": "Uniwersalne pytania na każdą okazję",
+  "pytania": [
+    {
+      "id": "o1",
+      "pytanie": "Czego najbardziej brakuje Ci rano?",
+      "odpowiedzi": [
+        { "tekst": "Snu", "punkty": 35 },
+        { "tekst": "Czasu", "punkty": 25 },
+        { "tekst": "Kawy", "punkty": 20 },
+        { "tekst": "Siły / energii", "punkty": 12 },
+        { "tekst": "Ochoty do pracy", "punkty": 8 }
+      ]
+    },
+    {
+      "id": "o2",
+      "pytanie": "Co zabierasz na bezludną wyspę?",
+      "odpowiedzi": [
+        { "tekst": "Jedzenie / wodę", "punkty": 30 },
+        { "tekst": "Telefon", "punkty": 22 },
+        { "tekst": "Nóż / narzędzia", "punkty": 18 },
+        { "tekst": "Książkę", "punkty": 15 },
+        { "tekst": "Koc / namiot", "punkty": 15 }
+      ]
+    },
+    {
+      "id": "o3",
+      "pytanie": "Co robisz, kiedy jesteś chory?",
+      "odpowiedzi": [
+        { "tekst": "Leżysz w łóżku", "punkty": 40 },
+        { "tekst": "Pijesz herbatę z cytryną", "punkty": 25 },
+        { "tekst": "Oglądasz TV / Netflix", "punkty": 18 },
+        { "tekst": "Bierzesz leki", "punkty": 10 },
+        { "tekst": "Skarżysz się", "punkty": 7 }
+      ]
+    },
+    {
+      "id": "o4",
+      "pytanie": "Jakie jest Twoje ulubione danie na imprezę?",
+      "odpowiedzi": [
+        { "tekst": "Pizza", "punkty": 28 },
+        { "tekst": "Grill / kiełbasa", "punkty": 24 },
+        { "tekst": "Chipsy / przekąski", "punkty": 20 },
+        { "tekst": "Sałatka", "punkty": 15 },
+        { "tekst": "Ciasto", "punkty": 13 }
+      ]
+    },
+    {
+      "id": "o5",
+      "pytanie": "Co najbardziej irytuje w kolejce?",
+      "odpowiedzi": [
+        { "tekst": "Ktoś się wpycha", "punkty": 38 },
+        { "tekst": "Wolno idzie", "punkty": 28 },
+        { "tekst": "Pani liczy pieniądze", "punkty": 18 },
+        { "tekst": "Ktoś głośno rozmawia", "punkty": 10 },
+        { "tekst": "Brak obsługi", "punkty": 6 }
+      ]
+    },
+    {
+      "id": "o6",
+      "pytanie": "Co robisz w wolnym czasie?",
+      "odpowiedzi": [
+        { "tekst": "Oglądasz TV / filmy", "punkty": 30 },
+        { "tekst": "Czytasz", "punkty": 22 },
+        { "tekst": "Sport / ruch", "punkty": 20 },
+        { "tekst": "Spotykasz się ze znajomymi", "punkty": 18 },
+        { "tekst": "Grasz w gry", "punkty": 10 }
+      ]
+    },
+    {
+      "id": "o7",
+      "pytanie": "Co zabierasz zawsze do samolotu?",
+      "odpowiedzi": [
+        { "tekst": "Telefon", "punkty": 30 },
+        { "tekst": "Dokumenty / paszport", "punkty": 28 },
+        { "tekst": "Słuchawki", "punkty": 18 },
+        { "tekst": "Książkę", "punkty": 14 },
+        { "tekst": "Poduszkę", "punkty": 10 }
+      ]
+    },
+    {
+      "id": "o8",
+      "pytanie": "Jakie zwierzę chcesz mieć w domu?",
+      "odpowiedzi": [
+        { "tekst": "Psa", "punkty": 45 },
+        { "tekst": "Kota", "punkty": 30 },
+        { "tekst": "Rybki", "punkty": 12 },
+        { "tekst": "Chomika", "punkty": 8 },
+        { "tekst": "Papugę", "punkty": 5 }
+      ]
+    },
+    {
+      "id": "o9",
+      "pytanie": "Co jesz na śniadanie?",
+      "odpowiedzi": [
+        { "tekst": "Kanapki", "punkty": 40 },
+        { "tekst": "Jajka", "punkty": 22 },
+        { "tekst": "Płatki / muesli", "punkty": 18 },
+        { "tekst": "Naleśniki", "punkty": 12 },
+        { "tekst": "Nic / tylko kawa", "punkty": 8 }
+      ]
+    },
+    {
+      "id": "o10",
+      "pytanie": "Co kupujesz w ciemno, bez sprawdzania?",
+      "odpowiedzi": [
+        { "tekst": "Bilet na lotto", "punkty": 25 },
+        { "tekst": "Gumę do żucia", "punkty": 22 },
+        { "tekst": "Prezent komuś", "punkty": 20 },
+        { "tekst": "Używany telefon", "punkty": 18 },
+        { "tekst": "Kwiaty", "punkty": 15 }
+      ]
+    },
+    {
+      "id": "o11",
+      "pytanie": "Jakie jest najczęstsze noworoczne postanowienie?",
+      "odpowiedzi": [
+        { "tekst": "Schudnąć / dieta", "punkty": 42 },
+        { "tekst": "Więcej ćwiczyć", "punkty": 25 },
+        { "tekst": "Rzucić palenie", "punkty": 15 },
+        { "tekst": "Oszczędzać pieniądze", "punkty": 10 },
+        { "tekst": "Uczyć się czegoś nowego", "punkty": 8 }
+      ]
+    },
+    {
+      "id": "o12",
+      "pytanie": "Co najbardziej denerwuje w pracy?",
+      "odpowiedzi": [
+        { "tekst": "Szef", "punkty": 28 },
+        { "tekst": "Wstawać rano", "punkty": 25 },
+        { "tekst": "Kolega który gada", "punkty": 18 },
+        { "tekst": "Mało płacą", "punkty": 17 },
+        { "tekst": "Spotkania które mogły być mailem", "punkty": 12 }
+      ]
+    }
+  ]
+}

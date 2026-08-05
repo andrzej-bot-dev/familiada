@@ -1,0 +1,6 @@
+assets/audio/wlasne/
+*.log
+.DS_Store
+node_modules/
+__pycache__/
+.openclaw/

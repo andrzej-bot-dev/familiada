@@ -1,0 +1,182 @@
+/* ===== panel.css — Panel prowadzącego ===== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh; overflow-y: auto; overflow-x: hidden;
+  background: var(--kolor-tla-panel); color: var(--kolor-tekst);
+  font-family: var(--font-glowny); font-size: 14px;
+}
+
+/* === CO TERAZ === */
+.pasek-coteraz {
+  background: var(--kolor-tla-karty); border-bottom: 2px solid var(--kolor-akcent);
+  padding: 10px 20px; display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 100;
+}
+.coteraz-ikona { font-size: 1.8rem; }
+.coteraz-tekst { font-size: clamp(1rem, 1.5vw, 1.4rem); font-weight: bold; }
+
+/* === Status bar === */
+.status-bar {
+  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  padding: 6px 16px; background: var(--kolor-tla); border-bottom: 1px solid var(--kolor-border);
+  font-size: 0.85rem;
+}
+.status-item { display: flex; gap: 4px; align-items: center; }
+.status-dot { font-size: 1rem; }
+#status-stan-buzzera { font-weight: bold; color: var(--kolor-akcent); }
+
+/* === Przyciski === */
+.przycisk {
+  min-height: var(--panel-przycisk-wys); padding: 8px 16px;
+  font-size: var(--panel-przycisk-rozmiar); font-weight: bold;
+  border: 2px solid var(--kolor-border); border-radius: var(--panel-border-radius);
+  background: var(--kolor-tla-karty); color: var(--kolor-tekst); cursor: pointer;
+  transition: all var(--anim-szybka);
+}
+.przycisk:hover:not(:disabled) { background: var(--kolor-tla-karty-hover); border-color: var(--kolor-akcent); }
+.przycisk:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.przycisk-przedni { background: var(--kolor-akcent-2); border-color: var(--kolor-akcent-2); }
+.przycisk-przedni:hover:not(:disabled) { filter: brightness(1.15); }
+
+.przycisk-uzbroj { background: var(--kolor-dobrze); border-color: var(--kolor-dobrze); font-size: 1.1rem; }
+.przycisk-uzbroj:hover:not(:disabled) { filter: brightness(1.15); }
+
+.przycisk-reset { background: var(--kolor-zle); border-color: var(--kolor-zle); }
+.przycisk-reset:hover:not(:disabled) { filter: brightness(1.15); }
+
+.przycisk-iks { background: var(--kolor-zle); border-color: var(--kolor-zle); }
+.przycisk-bank { min-height: 50px; padding: 6px 12px; line-height: 1.3; }
+
+.przycisk-maly {
+  padding: 5px 10px; font-size: 0.8rem; font-weight: bold;
+  border: 1px solid var(--kolor-border); border-radius: 6px;
+  background: var(--kolor-tla-karty); color: var(--kolor-tekst); cursor: pointer;
+  transition: all var(--anim-szybka);
+}
+.przycisk-maly:hover:not(:disabled) { background: var(--kolor-tla-karty-hover); border-color: var(--kolor-akcent); }
+.przycisk-maly:disabled { opacity: 0.4; }
+
+/* === Layout === */
+.panel-glowny {
+  display: grid; grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 10px; padding: 10px;
+}
+@media (max-width: 1100px) { .panel-glowny { grid-template-columns: 1fr; } }
+
+.kolumna { display: flex; flex-direction: column; gap: 10px; }
+
+.sekcja {
+  background: var(--kolor-tla-karty); border: 1px solid var(--kolor-border);
+  border-radius: 10px; padding: 10px;
+}
+.sekcja h3 { font-size: 0.95rem; margin-bottom: 8px; color: var(--kolor-akcent); }
+.muted { color: var(--kolor-tekst-dim); font-weight: normal; font-size: 0.85rem; }
+
+/* === Wybory === */
+.wybor-select {
+  width: 100%; padding: 8px; background: var(--kolor-tla-panel);
+  color: var(--kolor-tekst); border: 1px solid var(--kolor-border); border-radius: 6px;
+  font-size: 0.9rem; margin-bottom: 8px;
+}
+
+/* === Kontrolki rundy === */
+.kontrolki-rundy { display: flex; gap: 6px; margin-bottom: 6px; }
+.mnoznik-kontrola { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.mnoznik-kontrola label { font-size: 0.85rem; }
+.mnoznik-btn.active { background: var(--kolor-zloto); color: #000; }
+
+/* === Buzzer === */
+.buzzer-kontrola { display: flex; gap: 8px; }
+.buzzer-kontrola .przycisk { flex: 1; }
+.symulacja-buzz { margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+.label-symulacja { font-size: 0.8rem; color: var(--kolor-tekst-dim); }
+
+/* === Iksy === */
+.iksy-kontrola { display: flex; gap: 6px; align-items: center; }
+
+/* === Lista odpowiedzi === */
+.lista-odpowiedzi { display: flex; flex-direction: column; gap: 4px; max-height: 50vh; overflow-y: auto; }
+.puste-info { color: var(--kolor-tekst-dim); text-align: center; padding: 20px; }
+
+.odpowiedz-wiersz {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  background: var(--kolor-tla-panel); border: 1px solid var(--kolor-border);
+  transition: all var(--anim-szybka);
+}
+.odpowiedz-wiersz:hover { background: var(--kolor-tla-karty-hover); border-color: var(--kolor-akcent); }
+.odpowiedz-wiersz.odslonieta { background: rgba(34,211,238,0.15); border-color: var(--kolor-akcent); }
+.odpowiedz-numer {
+  font-weight: bold; color: var(--kolor-tekst-dim); min-width: 24px; text-align: center;
+}
+.odpowiedz-tekst { flex: 1; }
+.odpowiedz-punkty { font-weight: bold; color: var(--kolor-zloto); min-width: 40px; text-align: right; }
+.odpowiedz-akcja { font-size: 0.75rem; color: var(--kolor-tekst-dim); }
+
+/* === Bank === */
+.bank-wyswietlacz {
+  font-size: 2.5rem; font-weight: bold; text-align: center;
+  color: var(--kolor-zloto); padding: 8px;
+}
+.bank-kontrola { display: flex; gap: 8px; }
+.bank-kontrola .przycisk { flex: 1; }
+.bank-druzyna-nazwa { font-weight: bold; }
+
+/* === Drużyny panel === */
+.druzyna-panel {
+  display: grid; grid-template-columns: 1fr auto auto auto; gap: 4px;
+  align-items: center; margin-bottom: 6px; padding: 6px;
+  border: 1px solid var(--kolor-border); border-radius: 6px;
+}
+.input-druzyna {
+  width: 100%; padding: 4px 8px; background: var(--kolor-tla-panel);
+  color: var(--kolor-tekst); border: 1px solid var(--kolor-border); border-radius: 4px;
+  font-size: 0.85rem;
+}
+.input-druzyna-punkty {
+  width: 60px; padding: 4px; background: var(--kolor-tla-panel);
+  color: var(--kolor-tekst); border: 1px solid var(--kolor-border); border-radius: 4px;
+  font-size: 0.85rem;
+}
+.druzyna-suma-panel { font-size: 1.4rem; font-weight: bold; color: var(--kolor-zloto); min-width: 50px; text-align: center; }
+
+/* === Audio === */
+.audio-kontrola { display: flex; align-items: center; gap: 6px; }
+
+/* === Historia === */
+.historia-kontrola { display: flex; gap: 6px; }
+
+/* === Akcje === */
+.akcje-lista { display: flex; flex-direction: column; gap: 4px; }
+.akcje-lista button { text-align: left; }
+
+/* === Przejecie === */
+.przejecie-kontrola { margin-top: 6px; }
+.przycisk-przejecie {
+  width: 100%; background: var(--kolor-zloto); color: #000; border-color: var(--kolor-zloto);
+  font-size: 1rem; padding: 10px;
+}
+
+/* === Overlay === */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.overlay-tresc {
+  background: var(--kolor-tla-karty); border-radius: 16px; padding: 30px;
+  max-width: 500px; text-align: center; border: 1px solid var(--kolor-border);
+}
+.overlay-tresc h2 { margin-bottom: 16px; color: var(--kolor-akcent); }
+.skroty-lista { text-align: left; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
+.skroty-lista div { font-size: 0.85rem; }
+kbd {
+  background: var(--kolor-tla-panel); border: 1px solid var(--kolor-border);
+  border-radius: 4px; padding: 2px 6px; font-family: monospace; font-size: 0.8rem;
+}
+
+/* === Animacje === */
+@keyframes pulse-green { 0%,100% { box-shadow: 0 0 0 rgba(34,197,94,0); } 50% { box-shadow: 0 0 20px rgba(34,197,94,0.5); } }
+.przycisk-uzbroj.armed { animation: pulse-green 1.5s infinite; }

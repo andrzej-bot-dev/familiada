@@ -1,0 +1,65 @@
+/* ===== edytor.css — Edytor pytań ===== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh; background: var(--kolor-tla-panel); color: var(--kolor-tekst);
+  font-family: var(--font-glowny); font-size: 14px;
+}
+
+.edytor-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 20px; background: var(--kolor-tla-karty);
+  border-bottom: 2px solid var(--kolor-akcent);
+}
+.edytor-header h1 { font-size: 1.4rem; }
+.btn-back { color: var(--kolor-akcent); text-decoration: none; font-size: 0.9rem; }
+
+.edytor-glowny { display: grid; grid-template-columns: 350px 1fr; gap: 12px; padding: 12px; }
+@media (max-width: 800px) { .edytor-glowny { grid-template-columns: 1fr; } }
+
+.lista-panel { display: flex; flex-direction: column; gap: 8px; }
+
+.lista-toolbar { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+
+.pytania-lista { display: flex; flex-direction: column; gap: 4px; max-height: 65vh; overflow-y: auto; }
+
+.pytanie-wiersz {
+  padding: 8px 10px; background: var(--kolor-tla-karty); border: 1px solid var(--kolor-border);
+  border-radius: 6px; cursor: pointer; transition: all var(--anim-szybka);
+}
+.pytanie-wiersz:hover { background: var(--kolor-tla-karty-hover); }
+.pytanie-wiersz.aktywne { border-color: var(--kolor-akcent); background: rgba(34,211,238,0.1); }
+.pytanie-wiersz .pwt-tekst { font-weight: bold; margin-bottom: 4px; }
+.pytanie-wiersz .pwt-info { font-size: 0.8rem; color: var(--kolor-tekst-dim); }
+
+.wybor-select {
+  flex: 1; padding: 6px; background: var(--kolor-tla-panel); color: var(--kolor-tekst);
+  border: 1px solid var(--kolor-border); border-radius: 6px; font-size: 0.85rem;
+}
+
+.przycisk { padding: 8px 16px; font-weight: bold; border: 2px solid var(--kolor-border); border-radius: 8px; background: var(--kolor-tla-karty); color: var(--kolor-tekst); cursor: pointer; }
+.przycisk:hover { background: var(--kolor-tla-karty-hover); border-color: var(--kolor-akcent); }
+
+.przycisk-maly { padding: 5px 10px; font-size: 0.8rem; font-weight: bold; border: 1px solid var(--kolor-border); border-radius: 6px; background: var(--kolor-tla-karty); color: var(--kolor-tekst); cursor: pointer; }
+.przycisk-maly:hover { background: var(--kolor-tla-karty-hover); }
+
+.edycja-panel { background: var(--kolor-tla-karty); border: 1px solid var(--kolor-border); border-radius: 10px; padding: 16px; }
+.puste-info { color: var(--kolor-tekst-dim); text-align: center; padding: 40px; }
+
+.form-grupa { margin-bottom: 16px; }
+.form-grupa label { display: block; font-weight: bold; margin-bottom: 4px; font-size: 0.9rem; }
+.form-grupa input[type="text"], .form-grupa input[type="number"] {
+  width: 100%; padding: 8px; background: var(--kolor-tla-panel); color: var(--kolor-tekst);
+  border: 1px solid var(--kolor-border); border-radius: 6px; font-size: 0.9rem;
+}
+
+.odpowiedzi-edycja { display: flex; flex-direction: column; gap: 6px; }
+.odpowiedz-edycja-wiersz {
+  display: grid; grid-template-columns: auto 1fr 80px auto; gap: 6px; align-items: center;
+}
+.odpowiedz-edycja-wiersz .numer { font-weight: bold; color: var(--kolor-tekst-dim); min-width: 24px; }
+.btn-usun { background: var(--kolor-zle); border: none; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+
+.form-akcje { display: flex; gap: 8px; margin-top: 16px; }
+.bledy-walidacji { color: var(--kolor-zle); font-size: 0.85rem; margin-top: 8px; }

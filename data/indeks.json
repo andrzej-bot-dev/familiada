@@ -1,0 +1,13 @@
+{
+  "profile": [
+    { "plik": "domyslny", "nazwa": "Domyślny" },
+    { "plik": "wesele", "nazwa": "Wesele" },
+    { "plik": "urodziny", "nazwa": "Urodziny" },
+    { "plik": "firmowa", "nazwa": "Impresa firmowa" }
+  ],
+  "zestawy": [
+    { "plik": "ogolny", "nazwa": "Ogólny (12 pytań)" },
+    { "plik": "wesele", "nazwa": "Wesele (6 pytań)" },
+    { "plik": "testowy", "nazwa": "Testowy (3 krótkie)" }
+  ]
+}

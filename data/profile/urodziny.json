@@ -1,0 +1,21 @@
+{
+  "nazwaProfilu": "Urodziny",
+  "wydarzenie": {
+    "tytul": "Familiada Urodzinowa",
+    "podtytul": "Solbovs Solenizant",
+    "tekstIntro": "Wszystkiego najlepszego! Zagrajmy w Familiadę!",
+    "motyw": "pastelowy"
+  },
+  "druzyny": [
+    { "id": "d1", "nazwa": "Rodzina", "skrot": "ROD", "kolor": "#c084fc" },
+    { "id": "d2", "nazwa": "Przyjaciele", "skrot": "PRZ", "kolor": "#f0abfc" }
+  ],
+  "zasady": {
+    "maxIksow": 3,
+    "liczbaRund": 4,
+    "mnoznikiRund": [1, 1, 2, 3],
+    "przejecieWlaczone": true,
+    "pokazujBank": true,
+    "pokazujPunktyNaPlanszy": true
+  }
+}

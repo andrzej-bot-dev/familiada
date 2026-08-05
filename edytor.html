@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Familiada — Edytor pytań</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/edytor.css">
+</head>
+<body>
+  <header class="edytor-header">
+    <h1>📝 Edytor pytań Familiady</h1>
+    <a href="index.html" class="btn-back">← Wróć</a>
+  </header>
+
+  <div class="edytor-glowny">
+    <div class="lista-panel">
+      <div class="lista-toolbar">
+        <select id="wybor-zestawu" class="wybor-select"></select>
+        <button class="przycisk-maly" id="btn-nowy-zestaw">+ Nowy</button>
+        <button class="przycisk-maly" id="btn-importuj">📥 Importuj</button>
+        <button class="przycisk-maly" id="btn-eksportuj">📤 Eksportuj</button>
+      </div>
+      <div class="pytania-lista" id="pytania-lista"></div>
+      <button class="przycisk" id="btn-nowe-pytanie">+ Dodaj pytanie</button>
+    </div>
+
+    <div class="edycja-panel" id="edycja-panel">
+      <div class="puste-info">Wybierz pytanie z listy lub dodaj nowe</div>
+    </div>
+  </div>
+
+  <input type="file" id="file-input" accept=".json" style="display:none">
+
+  <script type="module" src="js/edytor.js"></script>
+</body>
+</html>

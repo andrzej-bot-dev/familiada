@@ -1,0 +1,21 @@
+{
+  "nazwaProfilu": "Impresa firmowa",
+  "wydarzenie": {
+    "tytul": "Familiada Firmowa",
+    "podtytul": "Dział A vs Dział B",
+    "tekstIntro": "Integracja przez rywalizację!",
+    "motyw": "ciemny"
+  },
+  "druzyny": [
+    { "id": "d1", "nazwa": "Dział Sprzedaży", "skrot": "SPR", "kolor": "#fbbf24" },
+    { "id": "d2", "nazwa": "Dział IT", "skrot": "IT", "kolor": "#f59e0b" }
+  ],
+  "zasady": {
+    "maxIksow": 3,
+    "liczbaRund": 5,
+    "mnoznikiRund": [1, 1, 1, 2, 3],
+    "przejecieWlaczone": true,
+    "pokazujBank": true,
+    "pokazujPunktyNaPlanszy": true
+  }
+}

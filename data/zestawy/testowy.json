@@ -1,0 +1,35 @@
+{
+  "nazwa": "Zestaw testowy",
+  "opis": "Krótki zestaw do testów (3 pytania)",
+  "pytania": [
+    {
+      "id": "t1",
+      "pytanie": "Podaj owoc na literę J.",
+      "odpowiedzi": [
+        { "tekst": "Jabłko", "punkty": 50 },
+        { "tekst": "Jagoda", "punkty": 30 },
+        { "tekst": "Jeżyna", "punkty": 20 }
+      ]
+    },
+    {
+      "id": "t2",
+      "pytanie": "Co jest na biurku programisty?",
+      "odpowiedzi": [
+        { "tekst": "Kawa", "punkty": 35 },
+        { "tekst": "Monitor", "punkty": 25 },
+        { "tekst": "Klawiatura", "punkty": 20 },
+        { "tekst": "Pączek", "punkty": 15 }
+      ]
+    },
+    {
+      "id": "t3",
+      "pytanie": "Co mówisz, gdy nie wiesz co powiedzieć?",
+      "odpowiedzi": [
+        { "tekst": "Yyy...", "punkty": 40 },
+        { "tekst": "Cóż", "punkty": 25 },
+        { "tekst": "Nie wiem", "punkty": 20 },
+        { "tekst": "Hmmm", "punkty": 15 }
+      ]
+    }
+  ]
+}

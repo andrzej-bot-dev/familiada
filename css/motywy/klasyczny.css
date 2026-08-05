@@ -1,0 +1,8 @@
+/* Motyw klasyczny — domyślny, nadpisuje tokeny */
+[data-motyw="klasyczny"] {
+  --kolor-tla: #0a0e27;
+  --kolor-tla-panel: #111936;
+  --kolor-tla-karty: #1a2347;
+  --kolor-akcent: #22d3ee;
+  --kolor-akcent-2: #3b82f6;
+}

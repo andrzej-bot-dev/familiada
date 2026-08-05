@@ -1,0 +1,34 @@
+{
+  "nazwaProfilu": "Wesele",
+  "wydarzenie": {
+    "tytul": "Familiada Weselna",
+    "podtytul": "Para Młoda vs Goście",
+    "tekstIntro": "Zapytaliśmy 100 osób... Czas na Familiadę!",
+    "motyw": "klasyczny"
+  },
+  "druzyny": [
+    { "id": "d1", "nazwa": "Strona Pana Młodego", "skrot": "PAN", "kolor": "#3b82f6" },
+    { "id": "d2", "nazwa": "Strona Pani Młodej", "skrot": "PANI", "kolor": "#ef4444" }
+  ],
+  "zasady": {
+    "maxIksow": 3,
+    "liczbaRund": 5,
+    "mnoznikiRund": [1, 1, 2, 2, 3],
+    "przejecieWlaczone": true,
+    "pokazujBank": true,
+    "pokazujPunktyNaPlanszy": true
+  },
+  "audio": {
+    "wlaczone": true,
+    "glosnosc": 0.7,
+    "mapowanie": {
+      "buzz": "us_buzzer.mp3",
+      "poprawna": "pl_correct_answer.mp3",
+      "bledna": "pl_wrong_answer.mp3",
+      "iks": "us_strike.mp3",
+      "trzyIksy": "us_three_strikes.mp3",
+      "intro": "pl_intro.mp3",
+      "koniecRundy": "compilation_pl_seg03_jingle.mp3"
+    }
+  }
+}

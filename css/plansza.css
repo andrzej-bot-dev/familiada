@@ -1,0 +1,203 @@
+/* ===== plansza.css — Style planszy (rzutnik) ===== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  width: 100vw; height: 100vh; overflow: hidden;
+  background: var(--kolor-tla); color: var(--kolor-tekst);
+  font-family: var(--font-glowny);
+  cursor: none; /* ukryj kursor po 3s (JS kontroluje) */
+}
+body.kursor-widoczny { cursor: default; }
+
+.plansza {
+  width: 100vw; height: 100vh;
+  display: flex; flex-direction: column;
+  padding: clamp(8px, 1.5vh, 24px);
+  gap: clamp(4px, 1vh, 16px);
+}
+
+/* === Górny pasek === */
+.pasek-gora {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 clamp(8px, 1vw, 20px);
+  min-height: clamp(40px, 6vh, 80px);
+}
+.tytul-wydarzenia {
+  font-size: var(--plansza-tytul-rozmiar);
+  font-weight: bold;
+  color: var(--kolor-akcent);
+  text-shadow: 0 0 20px rgba(34,211,238,0.3);
+}
+.runda-info {
+  display: flex; gap: 16px; align-items: center;
+  font-size: clamp(1rem, 2vw, 1.8rem); font-weight: bold;
+}
+.mnoznik {
+  color: var(--kolor-zloto);
+  font-size: clamp(1.2rem, 2.5vw, 2.2rem);
+}
+
+/* === Główny obszar === */
+.plansza-glowna {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: clamp(8px, 1.5vh, 20px);
+  position: relative;
+}
+
+.pytanie {
+  font-size: var(--plansza-pytanie-rozmiar);
+  text-align: center; font-weight: bold;
+  padding: clamp(8px, 1vh, 16px) clamp(16px, 2vw, 40px);
+  max-width: 90vw;
+  min-height: clamp(40px, 5vh, 60px);
+  opacity: 0; transition: opacity var(--anim-srednia);
+}
+.pytanie.aktywna { opacity: 1; }
+
+/* === Pola odpowiedzi === */
+.pola {
+  display: grid; gap: clamp(4px, 0.8vh, 12px);
+  width: min(90vw, 1200px);
+}
+/* Dynamiczne kolumny wg liczby pól */
+.pola[data-liczba="3"] { grid-template-columns: 1fr; }
+.pola[data-liczba="4"] { grid-template-columns: 1fr 1fr; }
+.pola[data-liczba="5"] { grid-template-columns: 1fr 1fr; }
+.pola[data-liczba="6"] { grid-template-columns: 1fr 1fr 1fr; }
+.pola[data-liczba="7"] { grid-template-columns: 1fr 1fr 1fr; }
+.pola[data-liczba="8"] { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+.pole {
+  background: var(--kolor-tla-karty);
+  border: 2px solid var(--kolor-border);
+  border-radius: 12px;
+  padding: clamp(8px, 1.5vh, 20px) clamp(12px, 1.5vw, 30px);
+  min-height: clamp(50px, 8vh, 100px);
+  display: flex; align-items: center; justify-content: space-between;
+  transition: all var(--anim-srednia);
+  overflow: hidden;
+  position: relative;
+}
+.pole.odslonieta {
+  background: linear-gradient(135deg, var(--kolor-akcent-2), var(--kolor-akcent));
+  border-color: var(--kolor-akcent);
+  box-shadow: var(--cien-akcent);
+  animation: odslon var(--anim-max) ease-out;
+}
+@keyframes odslon {
+  0% { transform: scale(0.95); opacity: 0.6; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pole-numer {
+  font-size: clamp(1.5rem, 3vw, 2.5rem); font-weight: bold;
+  color: var(--kolor-tekst-dim); min-width: 40px;
+}
+.pole-tekst {
+  flex: 1; font-size: var(--plansza-odpowiedz-rozmiar); font-weight: bold;
+  text-align: center; padding: 0 12px;
+}
+.pole-punkty {
+  font-size: var(--plansza-punkty-rozmiar); font-weight: bold;
+  color: var(--kolor-zloto); min-width: 60px; text-align: right;
+}
+.pole.zakryta .pole-tekst { color: transparent; }
+.pole.zakryta .pole-punkty { opacity: 0; }
+
+/* === Komunikat overlay === */
+.komunikat-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; opacity: 0; transition: opacity var(--anim-srednia);
+  z-index: 10;
+}
+.komunikat-overlay.aktywny { opacity: 1; }
+.komunikat-tresc {
+  font-size: clamp(2rem, 6vw, 5rem); font-weight: bold;
+  padding: 20px 60px; border-radius: 20px;
+  background: rgba(0,0,0,0.8); text-shadow: 0 0 30px currentColor;
+}
+.komunikat-tresc.druzyna-1 { color: var(--kolor-d1); }
+.komunikat-tresc.druzyna-2 { color: var(--kolor-d2); }
+.komunikat-tresc.przejecie { color: var(--kolor-zloto); }
+
+/* === Iksy === */
+.iksy-container {
+  display: flex; gap: 12px; justify-content: center;
+  min-height: clamp(40px, 6vh, 70px);
+}
+.iks {
+  font-size: clamp(2rem, 5vw, 4rem); font-weight: bold; color: var(--kolor-zle);
+  opacity: 0; transform: scale(0); transition: all var(--anim-srednia);
+  text-shadow: 0 0 20px var(--kolor-zle);
+}
+.iks.aktywny { opacity: 1; transform: scale(1); animation: iks-anim var(--anim-max); }
+@keyframes iks-anim {
+  0% { transform: scale(2) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* === Dolny pasek === */
+.pasek-dol {
+  display: flex; justify-content: space-between; align-items: stretch;
+  gap: clamp(8px, 1vw, 20px);
+  min-height: clamp(60px, 10vh, 120px);
+}
+.druzyna {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 12px; padding: clamp(8px, 1vh, 16px);
+  border: 3px solid transparent;
+  transition: all var(--anim-srednia);
+}
+.druzyna.d1 { border-color: var(--kolor-d1); background: rgba(59,130,246,0.1); }
+.druzyna.d2 { border-color: var(--kolor-d2); background: rgba(239,68,68,0.1); }
+.druzyna.kontrola { box-shadow: 0 0 30px currentColor; transform: scale(1.02); }
+.druzyna.d1.kontrola { border-color: var(--kolor-d1); border-width: 4px; }
+.druzyna.d2.kontrola { border-color: var(--kolor-d2); border-width: 4px; }
+
+.druzyna-nazwa {
+  font-size: clamp(0.9rem, 1.8vw, 1.6rem); font-weight: bold;
+  text-align: center;
+}
+.druzyna-suma {
+  font-size: clamp(1.5rem, 4vw, 3rem); font-weight: bold;
+  color: var(--kolor-zloto);
+}
+
+.bank-container {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 0 clamp(16px, 2vw, 40px);
+  background: var(--kolor-tla-karty); border-radius: 12px;
+  border: 2px solid var(--kolor-zloto); min-width: clamp(120px, 15vw, 200px);
+}
+.bank-label { font-size: clamp(0.7rem, 1.2vw, 1rem); color: var(--kolor-tekst-dim); }
+.bank-wartosc { font-size: var(--plansza-bank-rozmiar); font-weight: bold; color: var(--kolor-zloto); }
+
+/* === Ekran intro === */
+.ekran-intro {
+  position: fixed; inset: 0; background: var(--kolor-tla);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100; transition: opacity var(--anim-max);
+}
+.ekran-intro.ukryty { opacity: 0; pointer-events: none; }
+.intro-tytul {
+  font-size: clamp(3rem, 10vw, 8rem); font-weight: bold;
+  color: var(--kolor-akcent); text-shadow: 0 0 40px var(--kolor-akcent);
+  animation: pulsuj 2s ease-in-out infinite;
+}
+@keyframes pulsuj { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+.intro-podtytul {
+  font-size: clamp(1rem, 3vw, 2rem); color: var(--kolor-tekst-dim); margin-top: 16px;
+}
+
+/* === Ekran końcowy === */
+.ekran-koniec {
+  position: fixed; inset: 0; background: var(--kolor-tla);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.koniec-tytul { font-size: clamp(2rem, 6vw, 5rem); font-weight: bold; color: var(--kolor-zloto); }
+.koniec-zwyciezca { font-size: clamp(1.5rem, 4vw, 3rem); margin-top: 20px; }
