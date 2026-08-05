@@ -23,6 +23,11 @@ class Panel {
     this.aktywnyZestawIdx = -1;
     this.debug = new Debug(this);
 
+    // Pojedynek (face-off) tracking
+    this.pojedynek = null;  // null = brak, { tura: 1|2, d1: null|{id,punkty}, d2: null|{id,punkty} }
+    // Przejęcie — czy odpowiedź była już kliknięta
+    this.przejecieOdpowiedz = null;  // null = czeka, int = id odsłonionej odpowiedzi
+
     this._init();
   }
 
@@ -162,22 +167,28 @@ class Panel {
   _buzz(druzyna) {
     if (!this.stan || this.stan.stanBuzzera !== STAN_BUZZERA.ARMED) return;
     this.dispatch({ typ: 'BUZZ', druzyna });
-    // Bez dźwięku przy buzzie — buzz = drużyna odpowiada, nie błąd
+    // Rozpocznij pojedynek
+    this.pojedynek = { tura: 1, d1: null, d2: null, pierwszyBuzz: druzyna };
+    this.przejecieOdpowiedz = null;
     this.debug.log(`BUZZ:${druzyna}`);
   }
 
   // ===== Akcje gry =====
   uzbroj() {
     if (!this.stan?.pytanieTekst) return;
+    this.pojedynek = null;
+    this.przejecieOdpowiedz = null;
     this.dispatch({ typ: 'UZBROJ' });
     if (this.transport?.polaczony) this.transport.wyslij('a');
     this.debug.log('a wysłane (arm)');
   }
 
   resetBuzzer() {
+    this.pojedynek = null;
     this.dispatch({ typ: 'RESET_BUZZER' });
     if (this.transport?.polaczony) this.transport.wyslij('r');
     this.debug.log('r wysłane (reset)');
+    this._render();
   }
 
   wybierzPytanie(idx) {
@@ -203,6 +214,31 @@ class Panel {
   }
 
   dodajIks() {
+    // Pojedynek — IKS oznacza pudło w face-off
+    if (this.pojedynek) {
+      if (this.pojedynek.tura === 1) {
+        // Pierwsza drużyna spudłowała — druga odpowiada
+        this.pojedynek.d1 = null;  // spudłowała
+        this.pojedynek.tura = 2;
+        this.dispatch({ typ: 'DODAJ_IKS' });
+        const audioMap = this.konfiguracja.audio?.mapowanie || {};
+        graj(audioMap.iks);
+        this._render();
+        return;
+      } else if (this.pojedynek.tura === 2) {
+        // Druga drużyna spudłowała
+        this.pojedynek.d2 = null;
+        // Obie spudłowały? Pierwsza drużyna gra (była szybsza)
+        // Albo jeśli pierwsza trafiła — pierwsza gra
+        this.pojedynek = null;
+        this.dispatch({ typ: 'DODAJ_IKS' });
+        const audioMap = this.konfiguracja.audio?.mapowanie || {};
+        graj(audioMap.iks);
+        this._render();
+        return;
+      }
+    }
+
     this.dispatch({ typ: 'DODAJ_IKS' });
     const audioMap = this.konfiguracja.audio?.mapowanie || {};
     graj(audioMap.iks);
@@ -212,6 +248,7 @@ class Panel {
       if (czyPrzejecie(this.stan)) {
         graj(audioMap.trzyIksy);
         this.dispatch({ typ: 'ZMIEN_FAZE', faza: STAN_GRY.PRZEJECIE });
+        this.przejecieOdpowiedz = null;
       }
     }, 600);
   }
@@ -314,9 +351,33 @@ class Panel {
     );
     nowyStan.bank = 0;
     this.stan = nowyStan;
+    this.przejecieOdpowiedz = null;
     this._render();
     this._wyslijStan();
     this._zapiszLocal();
+  }
+
+  przejecieTrafiona() {
+    // Drużyna przejmująca trafiła — odsłoń resztę odpowiedzi + bank
+    const [d1, d2] = this.stan.druzyny;
+    const przejmujaca = this.stan.kontrola === d1?.id ? d2 : d1;
+    this.historia.zapisz(this.stan);
+    const nowyStan = { ...this.stan };
+    nowyStan.odpowiedzi = this.stan.odpowiedzi.map(o => ({ ...o, odslonieta: true }));
+    const dodatkowe = this.stan.odpowiedzi.filter(o => !o.odslonieta).reduce((s, o) => s + (o.punkty || 0) * (nowyStan.mnoznikRundy || 1), 0);
+    nowyStan.bank = this.stan.bank + dodatkowe;
+    nowyStan.fazaGry = STAN_GRY.KONIEC_RUNDY;
+    nowyStan.druzyny = nowyStan.druzyny.map(d =>
+      d.id === przejmujaca.id ? { ...d, suma: d.suma + nowyStan.bank } : d
+    );
+    nowyStan.bank = 0;
+    this.stan = nowyStan;
+    this.przejecieOdpowiedz = null;
+    this._render();
+    this._wyslijStan();
+    this._zapiszLocal();
+    const audioMap = this.konfiguracja.audio?.mapowanie || {};
+    graj(audioMap.poprawna);
   }
 
   zmienZestaw() {
@@ -348,61 +409,115 @@ class Panel {
   _renderCoTeraz() {
     const el = document.getElementById('coteraz-text');
     const elIkona = document.getElementById('coteraz-icon');
+    const elSub = document.getElementById('coteraz-sub');
+
     if (!this.transport?.polaczony) {
       el.textContent = 'Podłącz hosta ESP32 przez USB aby rozpocząć';
       elIkona.textContent = '🔌';
+      elSub.textContent = '';
       return;
     }
     if (!this.stan?.pytanieTekst) {
       el.textContent = 'Wybierz zestaw pytań, aby rozpocząć grę';
       elIkona.textContent = '📋';
+      elSub.textContent = '';
       return;
     }
 
-    let txt = '', ikona = '🎯';
+    let txt = '', ikona = '🎯', sub = '';
     const armed = this.stan.stanBuzzera === STAN_BUZZERA.ARMED;
     const buzzed = this.stan.stanBuzzera === STAN_BUZZERA.BUZZED;
     const faza = this.stan.fazaGry;
+    const d1 = this.stan.druzyny[0];
+    const d2 = this.stan.druzyny[1];
 
     switch (faza) {
       case STAN_GRY.IDLE:
-        txt = 'Przeczytaj pytanie na głos i kliknij UZBRÓJ'; ikona = '📖';
+        txt = 'Przeczytaj pytanie na głos i kliknij UZBRÓJ';
+        ikona = '📖';
+        sub = 'Odpowiedzi są ukryte na planszy. Buzzery są wyłączone.';
         break;
+
       case STAN_GRY.POJEDYNEK:
-        if (armed) { txt = '⏳ Czekam na pierwszy buzz...'; ikona = '⏳'; }
-        else if (buzzed && this.stan.ktoBuzznal) {
-          const d = this.stan.druzyny[this.stan.ktoBuzznal - 1];
-          txt = `Drużyna "${d?.nazwa || ''}" buzznęła! — odsłoń trafioną odpowiedź`;
-          ikona = '🔔';
+        if (armed) {
+          txt = '⏳ Buzzery uzbrojone — czekam na pierwszy buzz...';
+          ikona = '⏳';
+          sub = 'Po jednej osobie z drużyny przy buzzerach. Kto pierwszy wciśnie — ten odpowiada.';
         }
         break;
+
       case STAN_GRY.GRA:
-        if (czyWszystkoOdslonięte(this.stan)) {
-          txt = 'Wszystko odsłonięte! Przydziel bank drużynie';
-          ikona = '💰';
-        } else if (this.stan.ktoBuzznal) {
-          const d = this.stan.druzyny[this.stan.ktoBuzznal - 1];
-          txt = `Gra ${d?.nazwa || ''} — odsłoń odpowiedź lub daj IKS`;
-          ikona = '🎮';
+        if (this.pojedynek && this.pojedynek.tura === 1) {
+          // Pierwsza drużyna w pojedynku
+          const d = this.stan.druzyny[this.pojedynek.pierwszyBuzz - 1];
+          txt = `🔔 ${d?.nazwa || 'Drużyna'} buzznęła! Niech odpowie.`;
+          ikona = '🔔';
+          sub = 'Kliknij odpowiedź którą podała (jeśli jest na liście) albo IKS jeśli nie trafiła.';
+        } else if (this.pojedynek && this.pojedynek.tura === 2) {
+          // Druga drużyna w pojedynku
+          const pierwszyD = this.stan.druzyny[this.pojedynek.pierwszyBuzz - 1];
+          const drugiD = this.stan.druzyny[this.pojedynek.pierwszyBuzz === 1 ? 1 : 0];
+          const info = this.pojedynek.d1
+            ? `${pierwszyD?.nazwa} ma ${this.pojedynek.d1.punkty} pkt. `
+            : `${pierwszyD?.nazwa} spudłowała. `;
+          txt = `🔔 Teraz odpowiada: ${drugiD?.nazwa}`;
+          ikona = '🔔';
+          sub = info + 'Kliknij ich odpowiedź albo IKS. Kto ma więcej punktów — ten gra dalej.';
         } else {
-          txt = 'Odsłoń odpowiedź lub daj IKS'; ikona = '🎮';
+          // Normalna gra (po pojedynku)
+          const ktoGra = this.stan.druzyny.find(d => d.id === this.stan.kontrola) || d1;
+          const iksy = this.stan.iksy.length;
+          if (czyWszystkoOdslonięte(this.stan)) {
+            txt = 'Wszystko odsłonięte! Przydziel bank zwycięskiej drużynie';
+            ikona = '💰';
+            sub = 'Kliknij "Bank dla D1/D2" aby dodać punkty do wyniku drużyny.';
+          } else if (ktoGra) {
+            txt = `Gra: ${ktoGra.nazwa} — odsłoń trafioną odpowiedź lub IKS`;
+            ikona = '🎮';
+            sub = `IKSy: ${iksy}/3. Po 3 IKS-ach — przejęcie (przeciwnik ma jedną szansę).`;
+          } else {
+            txt = 'Odsłoń odpowiedź lub daj IKS';
+            ikona = '🎮';
+            sub = '';
+          }
         }
         break;
+
       case STAN_GRY.PRZEJECIE:
-        txt = '💰 PRZEJĘCIE! Drużyna przeciwna zgaduje';
-        ikona = '🤑';
+        const przejmujaca = this.stan.kontrola === d1?.id ? d2 : d1;
+        const broniaca = this.stan.kontrola === d1?.id ? d1 : d2;
+        if (this.przejecieOdpowiedz === null) {
+          txt = `💰 PRZEJĘCIE! ${przejmujaca?.nazwa} ma jedną szansę`;
+          ikona = '🤑';
+          sub = `Kapitan podaje jedną odpowiedź. Kliknij ją powyżej jeśli trafił, albo "Pudło" jeśli nie. Pudło → bank dla ${broniaca?.nazwa}.`;
+        } else {
+          txt = `Trafione! ${przejmujaca?.nazwa} przejmuje bank!`;
+          ikona = '✅';
+          sub = 'Kliknij "Pokaż pozostałe odpowiedzi" aby odsłonić resztę na planszy.';
+        }
         break;
+
       case STAN_GRY.KONIEC_RUNDY:
-        txt = 'Przydziel bank drużynie — Q lub W';
-        ikona = '💰';
+        if (this.stan.bank > 0) {
+          txt = 'Przydziel bank drużynie która wygrała rundę';
+          ikona = '💰';
+          sub = 'Kliknij "Bank dla D1" lub "Bank dla D2". Punkty przejdą na konto drużyny.';
+        } else {
+          txt = 'Runda zakończona — kliknij Następna runda';
+          ikona = '➡️';
+          sub = 'Bank rozdany. Kliknij aby przejść do kolejnego pytania.';
+        }
         break;
+
       case STAN_GRY.KONIEC_GRY:
         txt = '🏆 Koniec gry! Gratulacje!';
         ikona = '🏆';
+        sub = 'Możesz zacząć nową grę klikając "Nowa gra".';
         break;
     }
     el.textContent = txt;
     elIkona.textContent = ikona;
+    elSub.textContent = sub;
   }
 
   _renderStatus() {
@@ -489,22 +604,45 @@ class Panel {
 
   _klikOdpowiedz(id) {
     const faza = this.stan.fazaGry;
+
+    // ===== PRZEJĘCIE — krok po kroku =====
     if (faza === STAN_GRY.PRZEJECIE) {
-      // W przejęciu — odsłoń odpowiedź, a potem bank dla przejmującej automatycznie
+      if (this.przejecieOdpowiedz !== null) return;  // już kliknięto
+      this.przejecieOdpowiedz = id;
       this.odslonOdpowiedz(id);
-      // Krótkie opóźnienie żeby plansza pokazała animację
-      setTimeout(() => {
-        const [d1, d2] = this.stan.druzyny;
-        const przejmujaca = this.stan.kontrola === d1?.id ? d2 : d1;
-        // Odsłoń resztę
-        this.stan.odpowiedzi.forEach(o => {
-          if (!o.odslonieta) this.dispatch({ typ: 'ODSLON_ODPOWIEDZ', id: o.id });
-        });
-        this.bankDlaDruzyny(przejmujaca.id);
-      }, 1000);
-    } else {
-      this.odslonOdpowiedz(id);
+      // NIE odsłaniaj reszty automatycznie — poczekaj na guzik
+      this._render();
+      return;
     }
+
+    // ===== POJEDYNEK (face-off) =====
+    if (this.pojedynek) {
+      this.odslonOdpowiedz(id);
+      const odp = this.stan.odpowiedzi[id];
+      const najwyzsza = Math.max(...this.stan.odpowiedzi.map(o => o.punkty));
+
+      if (this.pojedynek.tura === 1) {
+        // Pierwsza drużyna odpowiedziała
+        this.pojedynek.d1 = { id, punkty: odp.punkty };
+        if (odp.punkty >= najwyzsza) {
+          // Najwyższa odpowiedź — wygrywa pojedynek
+          this.pojedynek = null;
+        } else {
+          // Nie najwyższa — druga drużyna odpowiada
+          this.pojedynek.tura = 2;
+        }
+      } else if (this.pojedynek.tura === 2) {
+        // Druga drużyna odpowiedziała — porównaj
+        this.pojedynek.d2 = { id, punkty: odp.punkty };
+        // Kto wyższy ten wygrywa
+        this.pojedynek = null;
+      }
+      this._render();
+      return;
+    }
+
+    // ===== NORMALNA GRA =====
+    this.odslonOdpowiedz(id);
   }
 
   _renderInfoBar() {
@@ -539,30 +677,28 @@ class Panel {
       return;
     }
 
-    // ===== KONIEC RUNDY / allRevealed =====
+    // ===== KONIEC RUNDY =====
     if (faza === STAN_GRY.KONIEC_RUNDY || allRevealed) {
-      // Ukryj "Następna runda" dopóki bank > 0
       const bankRozdany = this.stan.bank === 0;
-      const naglowek = bankRozdany ? '<div class="action-msg">Bank rozdany! ✓</div>' : '<div class="action-msg">Kto wygrał rundę? Przydziel bank:</div>';
-      el.innerHTML = `
-        ${naglowek}
-        ${!bankRozdany ? `
-        <div class="action-row">
-          <button class="btn-big btn-bank-big" id="az-bank-d1">
-            <span>${d1?.skrot || 'D1'}</span>
-            <span class="btn-sub">← Bank (${this.stan.bank})</span>
-          </button>
-          <button class="btn-big btn-bank-big" id="az-bank-d2">
-            <span>${d2?.skrot || 'D2'}</span>
-            <span class="btn-sub">← Bank (${this.stan.bank})</span>
-          </button>
-        </div>` : ''}
-        ${bankRozdany ? '<button class="btn-big btn-next-round" id="az-next-round">Następna runda →</button>' : ''}
-      `;
       if (!bankRozdany) {
+        el.innerHTML = `
+          <div class="action-msg">Kto wygrał rundę? Przydziel bank:</div>
+          <div class="action-row">
+            <button class="btn-big btn-bank-big" id="az-bank-d1">
+              <span>${d1?.skrot || 'D1'}</span>
+              <span class="btn-sub">← Bank (${this.stan.bank})</span>
+            </button>
+            <button class="btn-big btn-bank-big" id="az-bank-d2">
+              <span>${d2?.skrot || 'D2'}</span>
+              <span class="btn-sub">← Bank (${this.stan.bank})</span>
+            </button>
+          </div>`;
         document.getElementById('az-bank-d1').onclick = () => this.bankDlaDruzyny(d1.id);
         document.getElementById('az-bank-d2').onclick = () => this.bankDlaDruzyny(d2.id);
       } else {
+        el.innerHTML = `
+          <div class="action-msg">Bank rozdany! ✓</div>
+          <button class="btn-big btn-next-round" id="az-next-round">Następna runda →</button>`;
         document.getElementById('az-next-round').onclick = () => this.nastepnaRunda();
       }
       return;
@@ -572,47 +708,78 @@ class Panel {
     if (faza === STAN_GRY.PRZEJECIE) {
       const przejmujaca = this.stan.kontrola === d1?.id ? d2 : d1;
       const broniaca = this.stan.kontrola === d1?.id ? d1 : d2;
-      el.innerHTML = `
-        <div class="action-msg przejecie">💰 PRZEJĘCIE!</div>
-        <div class="action-msg">"${przejmujaca?.nazwa}" zgaduje — kliknij trafioną odpowiedź powyżej albo:</div>
-        <div class="action-row">
-          <button class="btn-big btn-bank-big" id="az-obrona">
-            ✕ Pudło — Bank dla ${broniaca?.skrot || 'D'}
-          </button>
-        </div>
-      `;
-      document.getElementById('az-obrona').onclick = () => this.obronaAkcja();
+
+      if (this.przejecieOdpowiedz === null) {
+        // Czeka na odpowiedź lub Pudło
+        el.innerHTML = `
+          <div class="action-msg przejecie">💰 PRZEJĘCIE!</div>
+          <div class="action-msg">Kliknij trafioną odpowiedź powyżej ↑ albo:</div>
+          <div class="action-row">
+            <button class="btn-big btn-bank-big" id="az-obrona">
+              ✕ Pudło — Bank dla ${broniaca?.skrot || 'D'}
+            </button>
+          </div>`;
+        document.getElementById('az-obrona').onclick = () => this.obronaAkcja();
+      } else {
+        // Odpowiedź już kliknięta — pokaż guzik "Pokaż pozostałe"
+        el.innerHTML = `
+          <div class="action-msg" style="color: var(--kolor-akcent);">✅ Trafione! ${przejmujaca?.nazwa} przejmuje bank!</div>
+          <button class="btn-big btn-next-round" id="az-pokaz-reszte">
+            Pokaż pozostałe odpowiedzi →
+          </button>`;
+        document.getElementById('az-pokaz-reszte').onclick = () => this.przejecieTrafiona();
+      }
       return;
     }
 
     // ===== ARMED (czeka na buzz) =====
     if (armed) {
       el.innerHTML = `
-        <div class="action-msg waiting">⏳ Buzzery uzbrojone — czekam na pierwszego...</div>
+        <div class="action-msg waiting">⏳ Buzzery uzbrojone — czekam na buzz...</div>
         <button class="btn-big btn-reset-big" id="az-reset">↻ RESET buzzera</button>
       `;
       document.getElementById('az-reset').onclick = () => this.resetBuzzer();
       return;
     }
 
-    // ===== BUZZED / GRA — odsłaniaj odpowiedzi lub IKS =====
-    if (buzzed || faza === STAN_GRY.GRA || faza === STAN_GRY.POJEDYNEK) {
+    // ===== GRA / BUZZED =====
+    if (buzzed || faza === STAN_GRY.GRA) {
       const iksDisabled = iksy >= 3;
-      const ktoBuzznalTxt = this.stan.ktoBuzznal
-        ? `Drużyna "${this.stan.druzyny[this.stan.ktoBuzznal - 1]?.nazwa}" — `
-        : '';
+
+      // Pojedynek — tura 1 lub 2
+      if (this.pojedynek) {
+        const aktualnaDruzyna = this.pojedynek.tura === 1
+          ? this.pojedynek.pierwszyBuzz
+          : (this.pojedynek.pierwszyBuzz === 1 ? 2 : 1);
+        const d = this.stan.druzyny[aktualnaDruzyna - 1];
+
+        let infoTxt = '';
+        if (this.pojedynek.tura === 2 && this.pojedynek.d1) {
+          const pierwszyD = this.stan.druzyny[this.pojedynek.pierwszyBuzz - 1];
+          infoTxt = `${pierwszyD?.nazwa || ''}: ${this.pojedynek.d1.punkty} pkt. `;
+        }
+
+        el.innerHTML = `
+          <div class="action-msg buzz">${infoTxt}Kliknij odpowiedź ${d?.nazwa || ''} albo IKS</div>
+          <div class="action-row">
+            <button class="btn-big btn-iks" id="az-iks">
+              ✕ IKS — ${d?.skrot || 'D'} spudłowała
+            </button>
+          </div>`;
+        document.getElementById('az-iks').onclick = () => this.dodajIks();
+        return;
+      }
+
+      // Normalna gra (po pojedynku)
+      const ktoGra = this.stan.druzyny.find(d => d.id === this.stan.kontrola) || d1;
       el.innerHTML = `
-        <div class="action-msg buzz">${ktoBuzznalTxt}Odsłoń trafioną odpowiedź lub daj IKS</div>
+        <div class="action-msg buzz">Gra: ${ktoGra?.nazwa || ''} — odsłoń odpowiedź (kliknij powyżej) lub IKS</div>
         <div class="action-row">
           <button class="btn-big btn-iks" id="az-iks" ${iksDisabled ? 'disabled' : ''}>
             ✕ IKS (${iksy}/3)
           </button>
-          ${buzzed ? `<button class="btn-big btn-reset-big" id="az-reset-gra">↻ Reset buzzera</button>` : ''}
-        </div>
-      `;
+        </div>`;
       document.getElementById('az-iks').onclick = () => this.dodajIks();
-      const resetBtn = document.getElementById('az-reset-gra');
-      if (resetBtn) resetBtn.onclick = () => this.resetBuzzer();
       return;
     }
 

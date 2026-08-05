@@ -24,6 +24,13 @@ body {
   font-weight: bold;
   line-height: 1.3;
 }
+.coteraz-sub {
+  font-size: 0.85rem;
+  color: var(--kolor-tekst-dim);
+  font-weight: normal;
+  margin-top: 2px;
+  line-height: 1.4;
+}
 
 /* ===== Mini status bar ===== */
 .mini-status {
