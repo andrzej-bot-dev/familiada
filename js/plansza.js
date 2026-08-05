@@ -31,6 +31,7 @@ const elTytulWydarzenia = $('tytul-wydarzenia');
 
 let ostatniStan = null;
 let ostatniaLiczbaIksow = -1;  // Track do animacji IKS
+let _animowaneSloty = new Set(); // Sloty X które już dostały animację w tej rundzie
 let czasownikKursora = null;
 
 // === Render planszy na podstawie stanu ===
@@ -145,9 +146,10 @@ function renderujIksy(iksy) {
   const liczba = iksy.length;
 
   // Jeśli mniej X niż było — rundy się zmieniły, przebuduj
-  if (liczba < ostatniaLiczbaIksow) {
+  if (liczba < ostatniaLiczbaIksow || liczba === 0) {
     elIksy.innerHTML = '';
     ostatniaLiczbaIksow = -1;
+    _animowaneSloty.clear();
   }
 
   // Dodaj brakujące X (tylko nowe, bez przebudowy starych)
@@ -158,17 +160,22 @@ function renderujIksy(iksy) {
     elIksy.appendChild(iks);
   }
 
-  // Oznacz aktywne
+  // Oznacz aktywne — animuj tylko RAZ na slot, nawet przy re-renderze
   for (let i = 0; i < 3; i++) {
     const el = elIksy.children[i];
     if (i < liczba) {
       if (!el.classList.contains('aktywny')) {
-        el.classList.add('aktywny', 'iks-animacja');
-        // Usuń klasę animacji po zakończeniu
-        setTimeout(() => el.classList.remove('iks-animacja'), 600);
+        el.classList.add('aktywny');
+        // Animuj tylko jeśli slot nie był jeszcze animowany w tej rundzie
+        if (!_animowaneSloty.has(i)) {
+          _animowaneSloty.add(i);
+          el.classList.add('iks-animacja');
+          setTimeout(() => el.classList.remove('iks-animacja'), 600);
+        }
       }
     } else {
       el.classList.remove('aktywny', 'iks-animacja');
+      _animowaneSloty.delete(i);
     }
   }
 
@@ -222,6 +229,9 @@ function pokazKoniec(stan) {
 sync.on((msg) => {
   if (msg.typ === 'STAN') {
     renderuj(msg.payload);
+    // Zapisz hash odebranego stanu, żeby localStorage polling
+    // nie przetworzył tego samego jeszcze raz (fix double render)
+    _zapiszHashDlaStanu(msg.payload);
   } else if (msg.typ === 'KOMENDA') {
     if (msg.komenda === 'INTRO') {
       elIntroTytul.textContent = msg.dane?.tytul || 'Familiada';
@@ -258,7 +268,15 @@ try {
 
 // === Auto-sync: sprawdzaj localStorage co 1.5s ===
 // (fallback gdy BroadcastChannel nie dotrze między oknami)
+// WAŻNE: BroadcastChannel handler aktualizuje _ostatniHash,
+// więc polling nie przetworzy drugi raz tego samego stanu.
 let _ostatniHash = '';
+function _zapiszHashDlaStanu(stan) {
+  try {
+    const s = JSON.stringify(stan);
+    _ostatniHash = s.length + ':' + s.substring(0, 120);
+  } catch {}
+}
 setInterval(() => {
   try {
     const zapisany = localStorage.getItem('familiada-stan');

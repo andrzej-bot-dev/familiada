@@ -1,7 +1,9 @@
 // ===== audio.js — Odtwarzanie dźwięków z panelu =====
-// Preload, brakujący plik = ostrzeżenie. Folder wlasne/ ma pierwszeństwo.
+// Preload ładuje pliki naprawdę (canplaythrough), graj() odtwarza bez opóźnień.
+// Folder wlasne/ ma pierwszeństwo.
 
 const AUDIO_CACHE = new Map();
+const PRELOAD_PROMISES = new Map(); // nazwa → Promise<Audio|null>
 
 let glosnosc = 0.7;
 let wlaczone = true;
@@ -31,29 +33,35 @@ export function ustawWlaczone(v) {
   wlaczone = v;
 }
 
-/** Odtwórz plik dźwiękowy */
+/** Odtwórz plik dźwiękowy — bez opóźnień, cache już załadowany przez preload */
 export async function graj(nazwaPliku) {
   if (!wlaczone || !nazwaPliku) return;
+
+  // Jeśli preload jeszcze trwa, poczekaj
+  if (PRELOAD_PROMISES.has(nazwaPliku)) {
+    await PRELOAD_PROMISES.get(nazwaPliku);
+  }
 
   let audio = AUDIO_CACHE.get(nazwaPliku);
 
   if (!audio) {
-    // Spróbuj wlasne/ najpierw, potem główny folder — bez HEAD, po prostu twórz Audio
+    // Fallback: spróbuj załadować teraz (jeśli preload nie objął tego pliku)
     for (const sciezka of [`assets/audio/wlasne/${nazwaPliku}`, `assets/audio/${nazwaPliku}`]) {
-      audio = new Audio(sciezka);
-      audio.volume = glosnosc;
-      // Sprawdź czy plik istnieje (error event = brak pliku)
-      const ok = await new Promise((resolve) => {
-        audio.addEventListener('error', () => resolve(false), { once: true });
-        audio.addEventListener('canplay', () => resolve(true), { once: true });
-        // Timeout fallback
-        setTimeout(() => resolve(true), 500);
-      });
-      if (ok) {
+      try {
+        audio = new Audio(sciezka);
+        audio.volume = glosnosc;
+        // Czekaj aż będzie gotowe (canplaythrough = można grać bez buforowania)
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('timeout')), 3000);
+          audio.addEventListener('canplaythrough', () => { clearTimeout(timeout); resolve(); }, { once: true });
+          audio.addEventListener('error', () => { clearTimeout(timeout); reject(new Error('error')); }, { once: true });
+          if (audio.readyState >= 3) { clearTimeout(timeout); resolve(); }
+        });
         AUDIO_CACHE.set(nazwaPliku, audio);
         break;
+      } catch {
+        audio = null;
       }
-      audio = null;
     }
   }
 
@@ -71,18 +79,35 @@ export async function graj(nazwaPliku) {
   }
 }
 
-/** Preload wszystkich dźwięków z mapowania */
+/** Preload wszystkich dźwięków z mapowania — ładuje naprawdę, czeka na canplaythrough */
 export function preload(mapowanie) {
   if (!mapowanie) return;
   const unikalne = [...new Set(Object.values(mapowanie))];
   unikalne.forEach(nazwa => {
-    if (!nazwa) return;
-    // Próbuj wlasne/ najpierw
-    const sciezka = `assets/audio/${nazwa}`;
-    const audio = new Audio(sciezka);
-    audio.preload = 'auto';
-    audio.volume = glosnosc;
-    // Nie czekamy — Audio przeglądarki ładuje w tle
-    AUDIO_CACHE.set(nazwa, audio);
+    if (!nazwa || AUDIO_CACHE.has(nazwa)) return;
+    // Odpal ładowanie i zapisz promise — graj() może na niego poczekać
+    const promise = new Promise(async (resolve) => {
+      for (const sciezka of [`assets/audio/wlasne/${nazwa}`, `assets/audio/${nazwa}`]) {
+        try {
+          const audio = new Audio(sciezka);
+          audio.preload = 'auto';
+          audio.volume = glosnosc;
+          await new Promise((res, rej) => {
+            const timeout = setTimeout(() => rej(new Error('timeout')), 5000);
+            audio.addEventListener('canplaythrough', () => { clearTimeout(timeout); res(); }, { once: true });
+            audio.addEventListener('error', () => { clearTimeout(timeout); rej(new Error('error')); }, { once: true });
+            if (audio.readyState >= 3) { clearTimeout(timeout); res(); }
+          });
+          AUDIO_CACHE.set(nazwa, audio);
+          PRELOAD_PROMISES.delete(nazwa);
+          resolve();
+          return;
+        } catch { /* próbuj następną ścieżkę */ }
+      }
+      console.warn(`Preload: nie znaleziono ${nazwa}`);
+      PRELOAD_PROMISES.delete(nazwa);
+      resolve();
+    });
+    PRELOAD_PROMISES.set(nazwa, promise);
   });
 }
