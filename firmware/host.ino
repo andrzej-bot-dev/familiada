@@ -21,8 +21,8 @@
 #include <esp_now.h>
 
 // >>> WKLEJ MAC-i BUZZEROW <<<
-uint8_t buzzer1Mac[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // BUZZER 1
-uint8_t buzzer2Mac[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // BUZZER 2
+uint8_t buzzer1Mac[] = {0x5C, 0x01, 0x3B, 0xBF, 0x24, 0x14}; // BUZZER 1 — 5C:01:3B:BF:24:14
+uint8_t buzzer2Mac[] = {0x30, 0x76, 0xF5, 0x94, 0x4C, 0x04}; // BUZZER 2 — 30:76:F5:94:4C:04
 
 // Typy wiadomosci ESP-NOW
 #define MSG_BUZZ 1 // buzzer -> host: "wcisnieto"
