@@ -1,0 +1,151 @@
+{
+  "nazwa": "Familiada — Znajomość Pana Młodego",
+  "opis": "Pytania o Dawida — sprawdzcie, jak dobrze znacie pana młodego!",
+  "wersja": 1,
+  "pytania": [
+    {
+      "id": "dawid-01",
+      "pytanie": "Co Dawid robi na siłowni?",
+      "tagi": ["dawid", "fitness"],
+      "odpowiedzi": [
+        { "tekst": "Dipsy z obciążeniem", "punkty": 30 },
+        { "tekst": "Pull-upy / podciąganie", "punkty": 25 },
+        { "tekst": "Bench press", "punkty": 20 },
+        { "tekst": "OHP (wyciskanie nad głowę)", "punkty": 15 },
+        { "tekst": "Klnie pod nosem", "punkty": 10 }
+      ]
+    },
+    {
+      "id": "dawid-02",
+      "pytanie": "Czym programuje Dawid?",
+      "tagi": ["dawid", "praca"],
+      "odpowiedzi": [
+        { "tekst": "TypeScript / JavaScript", "punkty": 40 },
+        { "tekst": "Node.js", "punkty": 25 },
+        { "tekst": "React / Next.js", "punkty": 18 },
+        { "tekst": "PHP", "punkty": 12 },
+        { "tekst": "Python", "punkty": 5 }
+      ]
+    },
+    {
+      "id": "dawid-03",
+      "pytanie": "Co Dawid je na diecie keto?",
+      "tagi": ["dawid", "dieta"],
+      "odpowiedzi": [
+        { "tekst": "Odżywki białkowe (whey)", "punkty": 30 },
+        { "tekst": "Mięso / kurczaka", "punkty": 25 },
+        { "tekst": "Jajka", "punkty": 18 },
+        { "tekst": "Pudding proteinowy", "punkty": 15 },
+        { "tekst": "Pommes chips (i żałuje)", "punkty": 12 }
+      ]
+    },
+    {
+      "id": "dawid-04",
+      "pytanie": "Gdzie mieszka Dawid?",
+      "tagi": ["dawid"],
+      "odpowiedzi": [
+        { "tekst": "Upplands Väsby", "punkty": 45 },
+        { "tekst": "Pod Sztokholmem", "punkty": 25 },
+        { "tekst": "W Szwecji", "punkty": 18 },
+        { "tekst": "W Skandynawii", "punkty": 7 },
+        { "tekst": "W Polsce (kiedyś)", "punkty": 5 }
+      ]
+    },
+    {
+      "id": "dawid-05",
+      "pytanie": "Co Dawid drukuje na drukarce 3D?",
+      "tagi": ["dawid", "hobby"],
+      "odpowiedzi": [
+        { "tekst": "Części do ESP32 / elektroniki", "punkty": 30 },
+        { "tekst": "Obudowy do projektów", "punkty": 25 },
+        { "tekst": "Fizyczne buzzery Familiady", "punkty": 20 },
+        { "tekst": "Klikacz XY (robot testujący apki)", "punkty": 15 },
+        { "tekst": "Zawieszki na słoiki na wesele", "punkty": 10 }
+      ]
+    },
+    {
+      "id": "dawid-06",
+      "pytanie": "Jakie urządzenie Dawid ma na biurku (albo w projekcie)?",
+      "tagi": ["dawid", "sprzęt"],
+      "odpowiedzi": [
+        { "tekst": "Raspberry Pi 5", "punkty": 28 },
+        { "tekst": "ESP32 (different versions)", "punkty": 25 },
+        { "tekst": "Anker PowerConf (głośnik)", "punkty": 18 },
+        { "tekst": "Drukarka 3D Anycubic Kobra", "punkty": 17 },
+        { "tekst": "Chromecast / smart home", "punkty": 12 }
+      ]
+    },
+    {
+      "id": "dawid-07",
+      "pytanie": "Co Dawid mówi do Aleksandry (Oli)?",
+      "tagi": ["dawid", "slub"],
+      "odpowiedzi": [
+        { "tekst": "Kocham Cię", "punkty": 35 },
+        { "tekst": "Co jemy na kolacji?", "punkty": 25 },
+        { "tekst": "Znowu kupiłem coś na AliExpress", "punkty": 20 },
+        { "tekst": "Potrzebuję więcej miejsca na biurku", "punkty": 12 },
+        { "tekst": "Gorzko!", "punkty": 8 }
+      ]
+    },
+    {
+      "id": "dawid-08",
+      "pytanie": "Co Dawid kupuje na AliExpress?",
+      "tagi": ["dawid", "zakupy"],
+      "odpowiedzi": [
+        { "tekst": "Części elektroniczne (ESP32, sensory)", "punkty": 35 },
+        { "tekst": "Złączki / kable / JST", "punkty": 25 },
+        { "tekst": "Filament do druku 3D", "punkty": 18 },
+        { "tekst": "Przyciski arcade / diody LED", "punkty": 14 },
+        { "tekst": "Coś czego nie potrzebuje (ale było tanio!)", "punkty": 8 }
+      ]
+    },
+    {
+      "id": "dawid-09",
+      "pytanie": "Jaki jest ulubiony język Dawida do kodowania?",
+      "tagi": ["dawid", "programowanie"],
+      "odpowiedzi": [
+        { "tekst": "TypeScript", "punkty": 40 },
+        { "tekst": "JavaScript", "punkty": 28 },
+        { "tekst": "Node.js (backend)", "punkty": 18 },
+        { "tekst": "PHP (legacy)", "punkty": 9 },
+        { "tekst": "Arduino C++ (dla ESP32)", "punkty": 5 }
+      ]
+    },
+    {
+      "id": "dawid-10",
+      "pytanie": "Ile razy Dawid mówi 'potrzebuję tego' o nowym gadżecie?",
+      "tagi": ["dawid", "smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Codziennie", "punkty": 35 },
+        { "tekst": "Raz w tygodniu", "punkty": 28 },
+        { "tekst": "Po obejrzeniu YouTube", "punkty": 20 },
+        { "tekst": "Gdy widzi promocję na AliExpress", "punkty": 12 },
+        { "tekst": "Nigdy (kłamie)", "punkty": 5 }
+      ]
+    },
+    {
+      "id": "dawid-11",
+      "pytanie": "Gdzie jest ślub Dawida i Oli?",
+      "tagi": ["dawid", "slub"],
+      "odpowiedzi": [
+        { "tekst": "Moja Weranda, Gołębiewie Średnie", "punkty": 40 },
+        { "tekst": "W Polsce", "punkty": 30 },
+        { "tekst": "Niedaleko Warszawy", "punkty": 15 },
+        { "tekst": "W Mazurskim", "punkty": 10 },
+        { "tekst": "Na plaży (nie, ale fajnie)", "punkty": 5 }
+      ]
+    },
+    {
+      "id": "dawid-12",
+      "pytanie": "Co Dawid robi, gdy kod nie działa?",
+      "tagi": ["dawid", "programowanie", "smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Pyta Andrzeja (AI)", "punkty": 30 },
+        { "tekst": "Google / Stack Overflow", "punkty": 25 },
+        { "tekst": "Console.log / debugger", "punkty": 20 },
+        { "tekst": "Klnie po polsku", "punkty": 15 },
+        { "tekst": "Daje git push i idzie spać", "punkty": 10 }
+      ]
+    }
+  ]
+}

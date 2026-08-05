@@ -1,0 +1,128 @@
+{
+  "nazwa": "Familiada Śmieszna",
+  "opis": "Śmieszne i absurdalne pytania — idealne na imprezę",
+  "wersja": 1,
+  "pytania": [
+    {
+      "id": "smieszne-01",
+      "pytanie": "Co najgorszego można powiedzieć na pierwszej randce?",
+      "tagi": ["randka", "smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Mieszkam z mamą", "punkty": 28 },
+        { "tekst": "Ile zarabiasz?", "punkty": 22 },
+        { "tekst": "Mam partnera/partnerkę", "punkty": 18 },
+        { "tekst": "Nienawidzę twojego psa", "punkty": 12 },
+        { "tekst": "Wydajesz mi się znajomy/a", "punkty": 10 },
+        { "tekst": "Już kiedyś tu byłem/am (z kimś innym)", "punkty": 10 }
+      ]
+    },
+    {
+      "id": "smieszne-02",
+      "pytanie": "Co robisz, gdy nikt nie widzi?",
+      "tagi": ["smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Dłubię w nosie", "punkty": 35 },
+        { "tekst": "Mówię do siebie", "punkty": 25 },
+        { "tekst": "Tańczę przed lustrem", "punkty": 18 },
+        { "tekst": "Śpiewam do szczotki", "punkty": 12 },
+        { "tekst": "Sprawdzam telefon na toalecie", "punkty": 10 }
+      ]
+    },
+    {
+      "id": "smieszne-03",
+      "pytanie": "Jaka jest najgłupsza wymówka, żeby nie iść na imprezę?",
+      "tagi": ["impreza", "smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Boli mnie głowa", "punkty": 30 },
+        { "tekst": "Muszę wstać rano", "punkty": 24 },
+        { "tekst": "Nie mam kasy", "punkty": 18 },
+        { "tekst": "Koty/szukam pilnie", "punkty": 14 },
+        { "tekst": "Babcia przyjechała", "punkty": 14 }
+      ]
+    },
+    {
+      "id": "smieszne-04",
+      "pytanie": "Co najczęściej kradniesz z hotelu?",
+      "tagi": ["hotel", "smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Ręczniki", "punkty": 38 },
+        { "tekst": "Szampon / mydło", "punkty": 28 },
+        { "tekst": "Jedzenie z breakfastu", "punkty": 16 },
+        { "tekst": "Szlafrok", "punkty": 10 },
+        { "tekst": "Nic nie kradnę!", "punkty": 8 }
+      ]
+    },
+    {
+      "id": "smieszne-05",
+      "pytanie": "Jakie jest najczęstsze kłamstwo w CV?",
+      "tagi": ["praca", "smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Znam język obcy", "punkty": 32 },
+        { "tekst": "Znam Excel / programy", "punkty": 24 },
+        { "tekst": "Jestem zorganizowany/a", "punkty": 18 },
+        { "tekst": "Doświadczenie z branżą", "punkty": 14 },
+        { "tekst": "Pracuję w zespole", "punkty": 12 }
+      ]
+    },
+    {
+      "id": "smieszne-06",
+      "pytanie": "Co robisz po pijanemu, czego żałujesz rano?",
+      "tagi": ["alkohol", "smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Piszę do byłej/go", "punkty": 30 },
+        { "tekst": "Kupuję głupoty w sieci", "punkty": 25 },
+        { "tekst": "Śpiewam karaoke", "punkty": 18 },
+        { "tekst": "Jem wszystko z lodówki", "punkty": 15 },
+        { "tekst": "Wysyłam głupie wiadomości", "punkty": 12 }
+      ]
+    },
+    {
+      "id": "smieszne-07",
+      "pytanie": "Co najdziwniejszego jesz w nocy?",
+      "tagi": ["jedzenie", "smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Chipsy / paluszki", "punkty": 30 },
+        { "tekst": "Resztki z obiadu na zimno", "punkty": 24 },
+        { "tekst": "Lody prosto z pudełka", "punkty": 20 },
+        { "tekst": "Kanapkę z czymś dziwnym", "punkty": 16 },
+        { "tekst": "Cukierki / słodycze", "punkty": 10 }
+      ]
+    },
+    {
+      "id": "smieszne-08",
+      "pytanie": "Jaka jest najczęstsza odpowiedź 'nie wiem' na pytanie?",
+      "tagi": ["smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Co jesz na obiad?", "punkty": 25 },
+        { "tekst": "Dokąd idziemy?", "punkty": 23 },
+        { "tekst": "O czym myślisz?", "punkty": 22 },
+        { "tekst": "Co chcesz na urodziny?", "punkty": 18 },
+        { "tekst": "Ile masz lat?", "punkty": 12 }
+      ]
+    },
+    {
+      "id": "smieszne-09",
+      "pytanie": "Co najczęściej gubisz?",
+      "tagi": ["smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Klucze", "punkty": 35 },
+        { "tekst": "Telefon", "punkty": 25 },
+        { "tekst": "Okulary", "punkty": 18 },
+        { "tekst": "Portfel", "punkty": 12 },
+        { "tekst": "Skarpetki (druga z pary)", "punkty": 10 }
+      ]
+    },
+    {
+      "id": "smieszne-10",
+      "pytanie": "Jakie słowo najtrudniej wymówić po pijanemu?",
+      "tagi": ["alkohol", "smieszne"],
+      "odpowiedzi": [
+        { "tekst": "Cześć", "punkty": 22 },
+        { "tekst": "Sześćset sześćdziesiąt sześć", "punkty": 30 },
+        { "tekst": "Wstrząs", "punkty": 20 },
+        { "tekst": "Bezcenny", "punkty": 18 },
+        { "tekst": "Grzegorz Brzęczyszczykiewicz", "punkty": 10 }
+      ]
+    }
+  ]
+}
