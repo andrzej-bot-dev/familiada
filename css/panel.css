@@ -310,6 +310,15 @@ body {
 .action-msg.waiting {
   color: var(--kolor-tekst-dim);
 }
+.action-sub {
+  font-size: 0.82rem;
+  color: var(--kolor-tekst-dim);
+  text-align: center;
+  padding: 4px 12px 8px;
+  line-height: 1.4;
+  max-width: 600px;
+  margin: 0 auto;
+}
 
 /* ===== Footer — drużyny ===== */
 .footer-bar {
