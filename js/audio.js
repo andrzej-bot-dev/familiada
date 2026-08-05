@@ -1,9 +1,10 @@
 // ===== audio.js — Odtwarzanie dźwięków z panelu =====
-// Preload ładuje pliki naprawdę (canplaythrough), graj() odtwarza bez opóźnień.
+// Wszystkie pliki ładują się przy starcie (preload).
+// graj() jest SYNCHRONICZNE — zero opóźnień, zero await.
 // Folder wlasne/ ma pierwszeństwo.
 
-const AUDIO_CACHE = new Map();
-const PRELOAD_PROMISES = new Map(); // nazwa → Promise<Audio|null>
+const AUDIO_CACHE = new Map();   // nazwa → Audio (już załadowany)
+const PRELOAD_PROMISES = new Map(); // nazwa → Promise (ładowanie w tle)
 
 let glosnosc = 0.7;
 let wlaczone = true;
@@ -12,102 +13,93 @@ let odblokowane = false;
 /** Odblokuj audio (wymaga interakcji użytkownika) */
 export function odblokujAudio() {
   if (odblokowane) return;
-  // Stwórz cichy buffer żeby odblokować kontekst
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     ctx.resume();
     odblokowane = true;
   } catch {
-    // IE etc — nie ma AudioContext, ale <audio> też działa
     odblokowane = true;
   }
 }
 
-/** Ustaw głośność (0..1) */
 export function ustawGlosnosc(v) {
   glosnosc = Math.max(0, Math.min(1, v));
+  // Aktualizuj głośność wszystkich cached audio
+  AUDIO_CACHE.forEach(a => { a.volume = glosnosc; });
 }
 
-/** Włącz/wyłącz dźwięk */
 export function ustawWlaczone(v) {
   wlaczone = v;
 }
 
-/** Odtwórz plik dźwiękowy — bez opóźnień, cache już załadowany przez preload */
-export async function graj(nazwaPliku) {
+/**
+ * Odtwórz plik — SYNCHRONICZNIE.
+ * Zero await, zero opóźnień. Audio MUSI być preloaded.
+ * Jeśli nie jest (edge case), ładuje w tle i próbuje odtworzyć ASAP.
+ */
+export function graj(nazwaPliku) {
   if (!wlaczone || !nazwaPliku) return;
 
-  // Jeśli preload jeszcze trwa, poczekaj
-  if (PRELOAD_PROMISES.has(nazwaPliku)) {
-    await PRELOAD_PROMISES.get(nazwaPliku);
-  }
+  const audio = AUDIO_CACHE.get(nazwaPliku);
 
-  let audio = AUDIO_CACHE.get(nazwaPliku);
-
-  if (!audio) {
-    // Fallback: spróbuj załadować teraz (jeśli preload nie objął tego pliku)
-    for (const sciezka of [`assets/audio/wlasne/${nazwaPliku}`, `assets/audio/${nazwaPliku}`]) {
-      try {
-        audio = new Audio(sciezka);
-        audio.volume = glosnosc;
-        // Czekaj aż będzie gotowe (canplaythrough = można grać bez buforowania)
-        await new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => reject(new Error('timeout')), 3000);
-          audio.addEventListener('canplaythrough', () => { clearTimeout(timeout); resolve(); }, { once: true });
-          audio.addEventListener('error', () => { clearTimeout(timeout); reject(new Error('error')); }, { once: true });
-          if (audio.readyState >= 3) { clearTimeout(timeout); resolve(); }
-        });
-        AUDIO_CACHE.set(nazwaPliku, audio);
-        break;
-      } catch {
-        audio = null;
-      }
-    }
-  }
-
-  if (!audio) {
-    console.warn(`Brak pliku dźwiękowego: ${nazwaPliku}`);
+  if (audio) {
+    // HIT — odtwórz natychmiast, w tej samej klatce co click
+    audio.volume = glosnosc;
+    audio.currentTime = 0;
+    // play() zwraca Promise ale nie czekamy na nie — fire & forget
+    audio.play().catch(() => {});
     return;
   }
 
-  audio.volume = glosnosc;
-  audio.currentTime = 0;
-  try {
-    await audio.play();
-  } catch (e) {
-    console.warn(`Nie udało się odtworzyć: ${nazwaPliku}`, e);
+  // MISS — spróbuj załadować w tle (edge case, normalnie preload łapie wszystko)
+  if (!PRELOAD_PROMISES.has(nazwaPliku)) {
+    _ladujTlo(nazwaPliku);
   }
+  // Spróbuj odtworzyć jak tylko się załaduje
+  PRELOAD_PROMISES.get(nazwaPliku)?.then(() => {
+    const a = AUDIO_CACHE.get(nazwaPliku);
+    if (a) {
+      a.volume = glosnosc;
+      a.currentTime = 0;
+      a.play().catch(() => {});
+    }
+  });
 }
 
-/** Preload wszystkich dźwięków z mapowania — ładuje naprawdę, czeka na canplaythrough */
+/** Ładuj pojedynczy plik w tle */
+function _ladujTlo(nazwa) {
+  const promise = (async () => {
+    for (const sciezka of [`assets/audio/wlasne/${nazwa}`, `assets/audio/${nazwa}`]) {
+      try {
+        const audio = new Audio(sciezka);
+        audio.preload = 'auto';
+        audio.volume = glosnosc;
+        await new Promise((res, rej) => {
+          const t = setTimeout(() => rej(), 3000);
+          audio.addEventListener('canplaythrough', () => { clearTimeout(t); res(); }, { once: true });
+          audio.addEventListener('error', () => { clearTimeout(t); rej(); }, { once: true });
+          if (audio.readyState >= 3) { clearTimeout(t); res(); }
+        });
+        AUDIO_CACHE.set(nazwa, audio);
+        return;
+      } catch {}
+    }
+    console.warn(`[audio] Nie znaleziono: ${nazwa}`);
+  })();
+  PRELOAD_PROMISES.set(nazwa, promise);
+  promise.finally(() => PRELOAD_PROMISES.delete(nazwa));
+}
+
+/**
+ * Preload wszystkich dźwięków z mapowania.
+ * Ładuje w tle, nie blokuje UI.
+ * Po zakończeniu wszystkie Audio są gotowe do natychmiastowego odtworzenia.
+ */
 export function preload(mapowanie) {
   if (!mapowanie) return;
-  const unikalne = [...new Set(Object.values(mapowanie))];
+  const unikalne = [...new Set(Object.values(mapowanie))].filter(Boolean);
   unikalne.forEach(nazwa => {
-    if (!nazwa || AUDIO_CACHE.has(nazwa)) return;
-    // Odpal ładowanie i zapisz promise — graj() może na niego poczekać
-    const promise = new Promise(async (resolve) => {
-      for (const sciezka of [`assets/audio/wlasne/${nazwa}`, `assets/audio/${nazwa}`]) {
-        try {
-          const audio = new Audio(sciezka);
-          audio.preload = 'auto';
-          audio.volume = glosnosc;
-          await new Promise((res, rej) => {
-            const timeout = setTimeout(() => rej(new Error('timeout')), 5000);
-            audio.addEventListener('canplaythrough', () => { clearTimeout(timeout); res(); }, { once: true });
-            audio.addEventListener('error', () => { clearTimeout(timeout); rej(new Error('error')); }, { once: true });
-            if (audio.readyState >= 3) { clearTimeout(timeout); res(); }
-          });
-          AUDIO_CACHE.set(nazwa, audio);
-          PRELOAD_PROMISES.delete(nazwa);
-          resolve();
-          return;
-        } catch { /* próbuj następną ścieżkę */ }
-      }
-      console.warn(`Preload: nie znaleziono ${nazwa}`);
-      PRELOAD_PROMISES.delete(nazwa);
-      resolve();
-    });
-    PRELOAD_PROMISES.set(nazwa, promise);
+    if (AUDIO_CACHE.has(nazwa) || PRELOAD_PROMISES.has(nazwa)) return;
+    _ladujTlo(nazwa);
   });
 }
