@@ -1,15 +1,14 @@
-// ===== panel.js — Panel prowadzącego (mózg gry) — wizard style =====
+// ===== panel.js — Panel prowadzącego (mózg gry) — wizard 3-krokowy =====
 
 import { STAN_GRY, STAN_BUZZERA, nowaGra, reducer } from './stan.js';
 import { Historia } from './historia.js';
 import { Sync } from './sync.js';
 import { wczytajProfil, listaProfili, DOMYSLNY_PROFIL } from './konfiguracja.js';
-import { wczytajZestaw, wczytajIndeks, dajPytania } from './pytania.js';
-import { MockTransport } from './transport/mock.js';
+import { wczytajZestaw, wczytajIndeks, dajPytania, losujPytania } from './pytania.js';
 import { WebSerialTransport } from './transport/webserial.js';
 import { graj, ustawGlosnosc, ustawWlaczone, odblokujAudio, preload } from './audio.js';
 import { Debug } from './debug.js';
-import { mnoznikDlaRundy, czyPrzejecie, czyWszystkoOdslonięte, czyTrzyIksy } from './zasady.js';
+import { mnoznikDlaRundy, czyPrzejecie, czyWszystkoOdslonięte } from './zasady.js';
 
 class Panel {
   constructor() {
@@ -17,10 +16,11 @@ class Panel {
     this.konfiguracja = DOMYSLNY_PROFIL;
     this.historia = new Historia();
     this.sync = new Sync();
-    this.transport = new MockTransport();
+    this.transport = null;       // Brak trybu demo — najpierw trzeba połączyć
     this.zestawy = [];
-    this.pytania = [];
+    this.pytania = [];            // Pytania po przetasowaniu
     this.biezacePytanieIdx = -1;
+    this.aktywnyZestawIdx = -1;
     this.debug = new Debug(this);
 
     this._init();
@@ -36,21 +36,10 @@ class Panel {
     const indeksZestawow = await wczytajIndeks();
     this._wypelnijZestawy(indeksZestawow);
 
-    if (indeksZestawow.length > 0) {
-      await wczytajZestaw(indeksZestawow[0].plik);
-      this.pytania = dajPytania();
-      this._wypelnijPytania();
-    }
-
     this.stan = nowaGra(this.konfiguracja);
-    this._sprobujWznow();
-
-    this.transport.onBuzz((druzyna) => this._buzz(druzyna));
 
     this.sync.on((msg) => {
-      if (msg.typ === 'ZADANIE_STANU' && this.stan) {
-        this._wyslijStan();
-      }
+      if (msg.typ === 'ZADANIE_STANU' && this.stan) this._wyslijStan();
     });
 
     preload(this.konfiguracja.audio?.mapowanie);
@@ -58,7 +47,45 @@ class Panel {
     this._render();
   }
 
-  // === Dispatch ===
+  // ===== Połączenie =====
+  async polacz() {
+    odblokujAudio();
+    if (!WebSerialTransport.dostepny()) {
+      alert('Web Serial API niedostępne.\nUżyj Chrome lub Edge.');
+      return;
+    }
+    try {
+      const t = new WebSerialTransport();
+      await t.polacz();
+      if (this.transport) this.transport.rozlacz();
+      this.transport = t;
+      t.onBuzz((d) => this._buzz(d));
+      this._render();
+      this._sprobujWznow();
+    } catch (e) {
+      alert(`Nie udało się połączyć: ${e.message}`);
+    }
+  }
+
+  // ===== Wybór zestawu → losowa kolejność → auto-start =====
+  async wybierzZestaw(idx) {
+    const zestaw = this.zestawy[idx];
+    if (!zestaw) return;
+    this.aktywnyZestawIdx = idx;
+    await wczytajZestaw(zestaw.plik);
+    this.pytania = losujPytania(dajPytania());
+    this.biezacePytanieIdx = -1;
+
+    // Reset gry i ładuj pierwsze pytanie
+    this.historia.reset();
+    this.stan = nowaGra(this.konfiguracja);
+    this._wyslijStan();
+    localStorage.setItem('familiada-stan', JSON.stringify(this.stan));
+    this.wybierzPytanie(0);
+    this._render();
+  }
+
+  // ===== Dispatch =====
   dispatch(akcja) {
     if (!this.stan) return;
     if (akcja.typ !== 'OVERRIDE' && akcja.typ !== 'WCZYTAJ_STAN') {
@@ -71,7 +98,6 @@ class Panel {
 
     // Auto-detekcja: po odsłonięciu odpowiedzi sprawdź stan
     if (akcja.typ === 'ODSLON_ODPOWIEDZ' && czyWszystkoOdslonięte(this.stan)) {
-      // Wszystkie odsłonięte → koniec rundy
       setTimeout(() => {
         if (this.stan.fazaGry !== STAN_GRY.KONIEC_RUNDY && this.stan.fazaGry !== STAN_GRY.KONIEC_GRY) {
           this.dispatch({ typ: 'ZMIEN_FAZE', faza: STAN_GRY.KONIEC_RUNDY });
@@ -99,7 +125,7 @@ class Panel {
       const zapisany = localStorage.getItem('familiada-stan');
       if (!zapisany) return;
       const stan = JSON.parse(zapisany);
-      if (!stan?.druzyny?.length) return;
+      if (!stan?.druzyny?.length || !stan?.pytanieTekst) return;
 
       const overlay = document.getElementById('overlay-wznow');
       overlay.style.display = 'flex';
@@ -118,7 +144,7 @@ class Panel {
     } catch {}
   }
 
-  // === Buzz ===
+  // ===== Buzz =====
   _buzz(druzyna) {
     if (this.stan.stanBuzzera !== STAN_BUZZERA.ARMED) return;
     this.dispatch({ typ: 'BUZZ', druzyna });
@@ -127,20 +153,21 @@ class Panel {
     this.debug.log(`BUZZ:${druzyna}`);
   }
 
-  // === Akcje ===
+  // ===== Akcje gry =====
   uzbroj() {
     this.dispatch({ typ: 'UZBROJ' });
-    this.transport.wyslij('a');
+    if (this.transport?.polaczony) this.transport.wyslij('a');
     this.debug.log('a wysłane (arm)');
   }
 
   resetBuzzer() {
     this.dispatch({ typ: 'RESET_BUZZER' });
-    this.transport.wyslij('r');
+    if (this.transport?.polaczony) this.transport.wyslij('r');
     this.debug.log('r wysłane (reset)');
   }
 
   wybierzPytanie(idx) {
+    if (idx >= this.pytania.length) return;
     this.biezacePytanieIdx = idx;
     const p = this.pytania[idx];
     if (!p) return;
@@ -172,7 +199,6 @@ class Panel {
 
   cofnijIks() {
     this.dispatch({ typ: 'USUN_IKS' });
-    // Jeśli schodzimy poniżej 3 iksów i jesteśmy w przejęciu → wróć do gry
     if (this.stan.fazaGry === STAN_GRY.PRZEJECIE && this.stan.iksy.length < 3) {
       this.dispatch({ typ: 'ZMIEN_FAZE', faza: STAN_GRY.GRA });
     }
@@ -186,11 +212,14 @@ class Panel {
   }
 
   nastepnaRunda() {
-    this.dispatch({ typ: 'NASTEPNA_RUNDA' });
     const nastepny = this.biezacePytanieIdx + 1;
-    if (nastepny < this.pytania.length) {
-      this.wybierzPytanie(nastepny);
+    if (nastepny >= this.pytania.length) {
+      // Koniec pytań → koniec gry
+      this.dispatch({ typ: 'ZAKONCZ_GRE' });
+      return;
     }
+    this.dispatch({ typ: 'NASTEPNA_RUNDA' });
+    this.wybierzPytanie(nastepny);
   }
 
   nowaGra() {
@@ -198,20 +227,17 @@ class Panel {
     this.stan = nowaGra(this.konfiguracja);
     this.biezacePytanieIdx = -1;
 
-    // Ręcznie zapisz NOWY (pusty) stan do localStorage ZAMIAST removeItem
-    // (removeItem wysyła storage event z null którego plansza ignoruje)
+    // Re-shuffle pytań przy nowej grze
+    if (this.pytania.length > 0) {
+      this.pytania = losujPytania(this.pytania);
+    }
+
     localStorage.setItem('familiada-stan', JSON.stringify(this.stan));
-
-    // Wyślij przez BroadcastChannel
     this._wyslijStan();
-
-    // Dodatkowo wyślij komendę RESET planszy
     this.sync.wyslijKomende('RESET_PLANSZY', {});
 
-    // Reset UI
-    const selP = document.getElementById('wybor-pytania');
-    if (selP) selP.value = '';
-
+    // Wróć do wyboru zestawu
+    this.aktywnyZestawIdx = -1;
     this._render();
   }
 
@@ -236,41 +262,35 @@ class Panel {
   }
 
   przejecieAkcja() {
-    // Odsłoń wszystkie + bank dla przejmującej
     const [d1, d2] = this.stan.druzyny;
     const przejmujaca = this.stan.kontrola === d1?.id ? d2 : d1;
     this.stan.odpowiedzi.forEach(o => {
-      if (!o.odslonieta) {
-        this.dispatch({ typ: 'ODSLON_ODPOWIEDZ', id: o.id });
-      }
+      if (!o.odslonieta) this.dispatch({ typ: 'ODSLON_ODPOWIEDZ', id: o.id });
     });
     this.bankDlaDruzyny(przejmujaca.id);
   }
 
   obronaAkcja() {
-    // Bank zostaje przy grającej drużynie
     this.bankDlaDruzyny(this.stan.kontrola);
   }
 
-  async polacz() {
-    odblokujAudio();
-    if (!WebSerialTransport.dostepny()) {
-      alert('Web Serial API niedostępne.\nUżyj Chrome lub Edge.\n\nDziałasz w trybie demonstracyjnym — buzzery symuluj klawiszami F2 i F3.');
-      return;
-    }
-    try {
-      const t = new WebSerialTransport();
-      await t.polacz();
-      this.transport.rozlacz();
-      this.transport = t;
-      t.onBuzz((d) => this._buzz(d));
-      this._render();
-    } catch (e) {
-      alert(`Nie udało się połączyć: ${e.message}`);
-    }
+  zmienZestaw() {
+    this.historia.reset();
+    this.stan = nowaGra(this.konfiguracja);
+    this.biezacePytanieIdx = -1;
+    this.aktywnyZestawIdx = -1;
+    this.pytania = [];
+    localStorage.setItem('familiada-stan', JSON.stringify(this.stan));
+    this._wyslijStan();
+    this.sync.wyslijKomende('RESET_PLANSZY', {});
+    document.getElementById('wybor-zestawu').value = '';
+    this._render();
   }
 
-  // ===== RENDER =====
+  // ============================================================
+  //  RENDER
+  // ============================================================
+
   _render() {
     this._renderCoTeraz();
     this._renderStatus();
@@ -283,38 +303,57 @@ class Panel {
   _renderCoTeraz() {
     const el = document.getElementById('coteraz-text');
     const elIkona = document.getElementById('coteraz-icon');
-    if (!this.stan) return;
+    if (!this.transport?.polaczony) {
+      el.textContent = 'Podłącz hosta ESP32 przez USB aby rozpocząć';
+      elIkona.textContent = '🔌';
+      return;
+    }
+    if (!this.stan?.pytanieTekst) {
+      el.textContent = 'Wybierz zestaw pytań, aby rozpocząć grę';
+      elIkona.textContent = '📋';
+      return;
+    }
 
     let txt = '', ikona = '🎯';
-    const maPytanie = !!this.stan.pytanieTekst;
     const armed = this.stan.stanBuzzera === STAN_BUZZERA.ARMED;
     const buzzed = this.stan.stanBuzzera === STAN_BUZZERA.BUZZED;
+    const faza = this.stan.fazaGry;
 
-    switch (this.stan.fazaGry) {
+    switch (faza) {
       case STAN_GRY.IDLE:
-        if (!maPytanie) { txt = 'Wybierz pytanie aby rozpocząć'; ikona = '🎯'; }
-        else { txt = 'Przeczytaj pytanie i kliknij UZBRÓJ'; ikona = '📖'; }
+        txt = 'Przeczytaj pytanie na głos i kliknij UZBRÓJ'; ikona = '📖';
         break;
       case STAN_GRY.POJEDYNEK:
-        if (armed) { txt = 'Czekam na buzz... kto pierwszy, ten lepszy!'; ikona = '⏳'; }
+        if (armed) { txt = '⏳ Czekam na pierwszy buzz...'; ikona = '⏳'; }
         else if (buzzed && this.stan.ktoBuzznal) {
           const d = this.stan.druzyny[this.stan.ktoBuzznal - 1];
-          txt = `Drużyna "${d?.nazwa || 'D' + this.stan.ktoBuzznal}" buzznęła! Odsłoń odpowiedź lub IKS`;
+          txt = `Drużyna "${d?.nazwa || ''}" buzznęła! — odsłoń trafioną odpowiedź`;
           ikona = '🔔';
         }
         break;
       case STAN_GRY.GRA:
-        if (czyWszystkoOdslonięte(this.stan)) { txt = 'Wszystko odsłonięte! Przydziel bank drużynie'; ikona = '💰'; }
-        else { txt = `Gra — odsłaniaj odpowiedzi (1-${this.stan.odpowiedzi.length}) lub daj IKS`; ikona = '🎮'; }
+        if (czyWszystkoOdslonięte(this.stan)) {
+          txt = 'Wszystko odsłonięte! Przydziel bank drużynie';
+          ikona = '💰';
+        } else if (this.stan.ktoBuzznal) {
+          const d = this.stan.druzyny[this.stan.ktoBuzznal - 1];
+          txt = `Gra ${d?.nazwa || ''} — odsłoń odpowiedź lub daj IKS`;
+          ikona = '🎮';
+        } else {
+          txt = 'Odsłoń odpowiedź lub daj IKS'; ikona = '🎮';
+        }
         break;
       case STAN_GRY.PRZEJECIE:
-        txt = 'Przejęcie! Przeciwnik podaje odpowiedź'; ikona = '🤑';
+        txt = '💰 PRZEJĘCIE! Drużyna przeciwna zgaduje';
+        ikona = '🤑';
         break;
       case STAN_GRY.KONIEC_RUNDY:
-        txt = 'Koniec rundy — przydziel bank (Q/W) lub następna runda'; ikona = '💰';
+        txt = 'Przydziel bank drużynie — Q lub W';
+        ikona = '💰';
         break;
       case STAN_GRY.KONIEC_GRY:
-        txt = 'Koniec gry! 🏆'; ikona = '🏆';
+        txt = '🏆 Koniec gry! Gratulacje!';
+        ikona = '🏆';
         break;
     }
     el.textContent = txt;
@@ -324,12 +363,11 @@ class Panel {
   _renderStatus() {
     const dot = document.getElementById('conn-dot');
     const txt = document.getElementById('conn-text');
-    if (this.transport?.polaczony && this.transport.tryb === 'webserial') {
+    if (this.transport?.polaczony) {
       dot.textContent = '🟢'; txt.textContent = 'Host połączony (USB)';
     } else {
-      dot.textContent = '🟡'; txt.textContent = 'Tryb demonstracyjny';
+      dot.textContent = '🔴'; txt.textContent = 'Nie połączono';
     }
-
     document.getElementById('buzzer-state').textContent = this.stan?.stanBuzzera || 'LOCKED';
     document.getElementById('buzzer-who').textContent = this.stan?.ktoBuzznal ? ` → D${this.stan.ktoBuzznal}` : '';
     document.getElementById('round-num').textContent = (this.stan?.runda ?? 0) + 1;
@@ -337,54 +375,50 @@ class Panel {
   }
 
   _renderMainArea() {
+    const connected = this.transport?.polaczony;
     const maPytanie = !!this.stan?.pytanieTekst;
 
-    // Setup section
-    document.getElementById('setup-section').style.display = maPytanie ? 'none' : 'block';
-
-    // Question + play area
-    document.getElementById('question-display').style.display = maPytanie ? 'block' : 'none';
-    document.getElementById('play-area').style.display = maPytanie ? 'flex' : 'none';
-
-    if (maPytanie) {
-      document.getElementById('question-text').textContent = this.stan.pytanieTekst;
-      this._renderAnswers();
-      this._renderInfoBar();
-      this._renderActionZone();
-    }
-
-    // Update pytania select
-    this._renderPytaniaSelect();
-  }
-
-  _renderPytaniaSelect() {
-    const sel = document.getElementById('wybor-pytania');
-    if (!sel) return;
-    if (sel.dataset.liczba === String(this.pytania.length)) {
-      sel.value = String(this.biezacePytanieIdx);
+    // Krok 1: Połącz
+    if (!connected) {
+      document.getElementById('wizard-connect').style.display = '';
+      document.getElementById('wizard-choose').style.display = 'none';
+      document.getElementById('wizard-game').style.display = 'none';
       return;
     }
-    sel.dataset.liczba = String(this.pytania.length);
-    sel.innerHTML = '<option value="">— wybierz pytanie —</option>' +
-      this.pytania.map((p, i) => {
-        const uzyte = this.stan?.pytaniaUzyte?.includes(p.id) ? ' ✓' : '';
-        return `<option value="${i}">${i + 1}. ${p.pytanie}${uzyte}</option>`;
-      }).join('');
-    sel.value = String(this.biezacePytanieIdx);
+
+    // Krok 2: Wybierz zestaw
+    if (!maPytanie) {
+      document.getElementById('wizard-connect').style.display = 'none';
+      document.getElementById('wizard-choose').style.display = '';
+      document.getElementById('wizard-game').style.display = 'none';
+      return;
+    }
+
+    // Krok 3: Gra
+    document.getElementById('wizard-connect').style.display = 'none';
+    document.getElementById('wizard-choose').style.display = 'none';
+    document.getElementById('wizard-game').style.display = '';
+
+    document.getElementById('question-text').textContent = this.stan.pytanieTekst;
+    document.getElementById('question-set-name').textContent = this.pytania.length
+      ? `Pytanie ${this.biezacePytanieIdx + 1} / ${this.pytania.length}`
+      : '';
+    this._renderAnswers();
+    this._renderInfoBar();
+    this._renderActionZone();
   }
 
   _renderAnswers() {
     const el = document.getElementById('answers-list');
     if (!this.stan?.odpowiedzi?.length) {
-      el.innerHTML = '<div class="puste-info">Wybierz pytanie aby zobaczyć odpowiedzi</div>';
+      el.innerHTML = '<div class="puste-info">Brak odpowiedzi</div>';
       return;
     }
-
     el.innerHTML = this.stan.odpowiedzi.map((o, i) => `
       <div class="odpowiedz-wiersz ${o.odslonieta ? 'odslonieta' : ''}" data-id="${o.id}">
         <div class="odpowiedz-numer">${i + 1}</div>
-        <div class="odpowiedz-tekst">${o.tekst}</div>
-        <div class="odpowiedz-punkty">${o.punkty}</div>
+        <div class="odpowiedz-tekst">${o.odslonieta ? o.tekst : '???'}</div>
+        <div class="odpowiedz-punkty">${o.odslonieta ? o.punkty : ''}</div>
         <div class="odpowiedz-akcja">${o.odslonieta ? '✓' : 'odsłoń →'}</div>
       </div>
     `).join('');
@@ -404,8 +438,6 @@ class Panel {
 
   _renderInfoBar() {
     document.getElementById('bank-value').textContent = this.stan?.bank ?? 0;
-
-    // Iksy
     const elIksy = document.getElementById('info-iksy');
     const n = this.stan?.iksy.length ?? 0;
     let html = '';
@@ -436,7 +468,7 @@ class Panel {
       return;
     }
 
-    // ===== KONIEC RUNDY (również auto gdy allRevealed) =====
+    // ===== KONIEC RUNDY / allRevealed =====
     if (faza === STAN_GRY.KONIEC_RUNDY || allRevealed) {
       el.innerHTML = `
         <div class="action-msg">Wszystko odsłonięte — przydziel bank!</div>
@@ -464,7 +496,7 @@ class Panel {
       const broniaca = this.stan.kontrola === d1?.id ? d1 : d2;
       el.innerHTML = `
         <div class="action-msg przejecie">💰 PRZEJĘCIE!</div>
-        <div class="action-msg">"${przejmujaca?.nazwa}" ma jedną szansę. Odsłoń odpowiedź jeśli trafia.</div>
+        <div class="action-msg">"${przejmujaca?.nazwa}" ma jedną szansę</div>
         <div class="action-row">
           <button class="btn-big btn-przejecie-big" id="az-przejecie">
             Trafione — Przejęcie!
@@ -510,7 +542,7 @@ class Panel {
       return;
     }
 
-    // ===== IDLE z pytaniem — główny przycisk UZBRÓJ =====
+    // ===== IDLE z pytaniem — UZBRÓJ =====
     el.innerHTML = `
       <button class="btn-big btn-uzbroj" id="az-uzbroj">⚔ UZBRÓJ</button>
     `;
@@ -528,35 +560,23 @@ class Panel {
 
     document.getElementById('suma-d1').textContent = d1?.suma ?? 0;
     document.getElementById('suma-d2').textContent = d2?.suma ?? 0;
-
-    // Cofnij
     document.getElementById('btn-cofnij').disabled = !this.historia.canUndo();
 
-    // Następna runda w footerze — pokaż tylko w KONIEC_RUNDY
     const btnNextRound = document.getElementById('btn-nastepna-runda');
     btnNextRound.style.display = (this.stan?.fazaGry === STAN_GRY.KONIEC_RUNDY) ? 'inline-block' : 'none';
-
-    // Następne / poprzednie w setup
-    const btnNastepne = document.getElementById('btn-nastepne');
-    const btnPoprzednie = document.getElementById('btn-poprzednie');
-    if (btnNastepne) btnNastepne.disabled = this.biezacePytanieIdx >= this.pytania.length - 1;
-    if (btnPoprzednie) btnPoprzednie.disabled = this.biezacePytanieIdx <= 0;
   }
 
   _renderSettings() {
-    // Mnożnik active
     document.querySelectorAll('.mnoznik-btn').forEach(btn => {
       btn.classList.toggle('active', parseInt(btn.dataset.m, 10) === (this.stan?.mnoznikRundy ?? 1));
     });
-    // Przywróć
     const btnPrzywroc = document.getElementById('btn-przywroc');
     if (btnPrzywroc) btnPrzywroc.disabled = !this.historia.canRedo();
-    // Iks cofnij
     const btnIksCofnij = document.getElementById('btn-iks-cofnij');
     if (btnIksCofnij) btnIksCofnij.disabled = (this.stan?.iksy.length ?? 0) === 0;
   }
 
-  // === Wypełnianie opcji ===
+  // ===== Wypełnianie opcji =====
   _wypelnijProfile(profile, aktywny) {
     const sel = document.getElementById('wybor-profilu');
     if (!sel) return;
@@ -569,45 +589,28 @@ class Panel {
     this.zestawy = zestawy;
     const sel = document.getElementById('wybor-zestawu');
     if (sel) {
-      sel.innerHTML = zestawy.map((z, i) =>
-        `<option value="${i}">${z.nazwa}</option>`
-      ).join('');
+      sel.innerHTML = '<option value="">— wybierz zestaw —</option>' +
+        zestawy.map((z, i) => `<option value="${i}">${z.nazwa}</option>`).join('');
     }
   }
 
-  _wypelnijPytania() {
-    const sel = document.getElementById('wybor-pytania');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">— wybierz pytanie —</option>' +
-      this.pytania.map((p, i) =>
-        `<option value="${i}">${i + 1}. ${p.pytanie}</option>`
-      ).join('');
-  }
-
-  // === Podłączanie UI ===
+  // ===== Podłączanie UI =====
   _podlaczUI() {
     const $ = (id) => document.getElementById(id);
 
-    // Setup — wybor pytań i zestawów
-    $('wybor-pytania').onchange = (e) => {
-      const idx = parseInt(e.target.value, 10);
-      if (!isNaN(idx)) this.wybierzPytanie(idx);
-    };
-    $('wybor-zestawu').onchange = async (e) => {
-      const idx = parseInt(e.target.value, 10);
+    // Wizard — połącz
+    $('btn-wizard-connect').onclick = () => this.polacz();
+
+    // Wizard — start
+    $('btn-wizard-start').onclick = () => {
+      const sel = $('wybor-zestawu');
+      const idx = parseInt(sel.value, 10);
       if (isNaN(idx)) return;
-      const zestaw = this.zestawy[idx];
-      if (!zestaw) return;
-      await wczytajZestaw(zestaw.plik);
-      this.pytania = dajPytania();
-      this._wypelnijPytania();
+      this.wybierzZestaw(idx);
     };
-    $('btn-nastepne').onclick = () => {
-      if (this.biezacePytanieIdx < this.pytania.length - 1) this.wybierzPytanie(this.biezacePytanieIdx + 1);
-    };
-    $('btn-poprzednie').onclick = () => {
-      if (this.biezacePytanieIdx > 0) this.wybierzPytanie(this.biezacePytanieIdx - 1);
-    };
+
+    // Wizard — zmień zestaw
+    $('link-change-set').onclick = () => this.zmienZestaw();
 
     // Profil
     $('wybor-profilu').onchange = (e) => {
@@ -616,14 +619,8 @@ class Panel {
 
     // Mnożnik
     document.querySelectorAll('.mnoznik-btn').forEach(btn => {
-      btn.onclick = () => {
-        const m = parseInt(btn.dataset.m, 10);
-        this.dispatch({ typ: 'USTAW_MNOZNIK', mnoznik: m });
-      };
+      btn.onclick = () => this.dispatch({ typ: 'USTAW_MNOZNIK', mnoznik: parseInt(btn.dataset.m, 10) });
     });
-
-    // Połączenie
-    $('btn-polacz').onclick = () => this.polacz();
 
     // Footer
     $('btn-cofnij').onclick = () => this.cofnij();
@@ -653,7 +650,7 @@ class Panel {
     // Przywróć
     $('btn-przywroc').onclick = () => this.przywroc();
 
-    // Symulacja buzz
+    // Buzz symulacja
     $('btn-buzz1').onclick = () => this._buzz(1);
     $('btn-buzz2').onclick = () => this._buzz(2);
 
@@ -698,6 +695,11 @@ class Panel {
       this.konfiguracja.audio.glosnosc = v;
     };
 
+    // Check Web Serial support
+    if (!('serial' in navigator)) {
+      $('warn-no-serial').style.display = '';
+    }
+
     // === Klawisze ===
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
@@ -711,8 +713,11 @@ class Panel {
       if (e.ctrlKey && klucz === 'KeyZ') { e.preventDefault(); this.cofnij(); return; }
       if (e.ctrlKey && (klucz === 'KeyY' || (e.shiftKey && klucz === 'KeyZ'))) { e.preventDefault(); this.przywroc(); return; }
 
-      // Nie blokuj skrótów przeglądarki (Ctrl+R, Ctrl+F5, F5, Ctrl+T, etc.)
+      // Nie blokuj skrótów przeglądarki (Ctrl+R, Ctrl+F5, etc.)
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      // Poniższe tylko gdy jesteśmy połączeni i w grze
+      if (!this.transport?.polaczony) return;
 
       if (klucz === 'Space') { e.preventDefault(); this.uzbroj(); return; }
       if (klucz === 'KeyR') { e.preventDefault(); this.resetBuzzer(); return; }
@@ -720,7 +725,7 @@ class Panel {
 
       if (klucz.startsWith('Digit')) {
         const n = parseInt(klucz.replace('Digit', ''), 10);
-        if (n >= 1 && n <= 8 && this.stan.odpowiedzi[n - 1]) {
+        if (n >= 1 && n <= 8 && this.stan?.odpowiedzi?.[n - 1]) {
           e.preventDefault();
           const o = this.stan.odpowiedzi[n - 1];
           if (!o.odslonieta) this.odslonOdpowiedz(n - 1);
@@ -728,23 +733,8 @@ class Panel {
         }
       }
 
-      if (klucz === 'KeyQ') { e.preventDefault(); this.bankDlaDruzyny(this.stan.druzyny[0].id); return; }
-      if (klucz === 'KeyW') { e.preventDefault(); this.bankDlaDruzyny(this.stan.druzyny[1].id); return; }
-
-      if (klucz === 'ArrowRight' || klucz === 'PageDown') {
-        e.preventDefault();
-        if (this.stan.fazaGry === STAN_GRY.KONIEC_RUNDY) {
-          this.nastepnaRunda();
-        } else if (this.biezacePytanieIdx < this.pytania.length - 1) {
-          this.wybierzPytanie(this.biezacePytanieIdx + 1);
-        }
-        return;
-      }
-      if (klucz === 'ArrowLeft' || klucz === 'PageUp') {
-        e.preventDefault();
-        if (this.biezacePytanieIdx > 0) this.wybierzPytanie(this.biezacePytanieIdx - 1);
-        return;
-      }
+      if (klucz === 'KeyQ') { e.preventDefault(); if (this.stan?.druzyny?.[0]) this.bankDlaDruzyny(this.stan.druzyny[0].id); return; }
+      if (klucz === 'KeyW') { e.preventDefault(); if (this.stan?.druzyny?.[1]) this.bankDlaDruzyny(this.stan.druzyny[1].id); return; }
 
       if (klucz === 'Escape') {
         document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none');
@@ -763,18 +753,19 @@ class Panel {
 window.addEventListener('DOMContentLoaded', () => {
   window.panel = new Panel();
 
-  // Debug hooks
   window.__debugBuzz = (n) => window.panel._buzz(n);
   window.__debugForceState = (faza) => window.panel.dispatch({ typ: 'ZMIEN_FAZE', faza });
   window.__debugDisconnect = () => {
     window.panel.debug.log('SYMULACJA AWARII: rozłączenie');
     if (window.panel.transport?.tryb === 'webserial') {
       window.panel.transport.rozlacz();
+      window.panel.transport = null;
       window.panel._render();
     }
   };
   window.__debugDemo = () => {
     const p = window.panel;
+    if (!p.pytania.length) return;
     if (p.biezacePytanieIdx < 0) p.wybierzPytanie(0);
     setTimeout(() => p.uzbroj(), 500);
     setTimeout(() => p._buzz(1), 1500);

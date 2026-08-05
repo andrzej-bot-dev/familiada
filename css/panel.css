@@ -535,3 +535,81 @@ kbd {
 }
 
 .muted { color: var(--kolor-tekst-dim); font-weight: normal; font-size: 0.85rem; }
+
+/* ===== Wizard steps ===== */
+.wizard-step {
+  width: 100%; display: flex; flex-direction: column; align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+.wizard-card {
+  background: var(--kolor-tla-karty);
+  border: 1px solid var(--kolor-border);
+  border-radius: 18px;
+  padding: 40px 36px;
+  text-align: center;
+  max-width: 520px; width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 16px;
+}
+.wizard-icon { font-size: 4rem; }
+.wizard-card h2 {
+  color: var(--kolor-akcent); font-size: 1.4rem;
+  margin: 0;
+}
+.wizard-card p {
+  color: var(--kolor-tekst-dim); font-size: 0.95rem;
+  line-height: 1.5; margin: 0;
+}
+.wizard-hint {
+  background: rgba(34,211,238,0.08);
+  border-radius: 10px; padding: 10px 16px;
+  font-size: 0.85rem !important; color: var(--kolor-tekst-dim) !important;
+}
+.wizard-serial-warn {
+  color: var(--kolor-zle) !important;
+  font-weight: bold;
+}
+.wizard-field {
+  width: 100%; text-align: left;
+}
+.wizard-field label {
+  display: block; margin-bottom: 6px;
+  font-size: 0.9rem; color: var(--kolor-tekst-dim);
+}
+.btn-connect {
+  padding: 18px 40px;
+  font-size: 1.2rem; font-weight: bold;
+  border: 3px solid var(--kolor-dobrze);
+  border-radius: 14px;
+  background: var(--kolor-dobrze);
+  color: #fff;
+  cursor: pointer;
+  transition: all var(--anim-szybka);
+  box-shadow: 0 4px 20px rgba(34,197,94,0.3);
+}
+.btn-connect:hover { filter: brightness(1.12); transform: translateY(-2px); }
+
+.btn-start-game {
+  padding: 16px 36px;
+  font-size: 1.15rem; font-weight: bold;
+  border: 3px solid var(--kolor-akcent);
+  border-radius: 14px;
+  background: var(--kolor-akcent);
+  color: #000;
+  cursor: pointer;
+  transition: all var(--anim-szybka);
+}
+.btn-start-game:hover { filter: brightness(1.12); transform: translateY(-1px); }
+
+.question-set-name {
+  font-size: 0.8rem; color: var(--kolor-tekst-dim);
+  margin-top: 4px; text-align: right;
+}
+.change-set-link {
+  display: inline-block; margin-top: 12px;
+  color: var(--kolor-tekst-dim);
+  font-size: 0.85rem; cursor: pointer;
+  transition: color var(--anim-szybka);
+}
+.change-set-link:hover { color: var(--kolor-akcent); }

@@ -11,15 +11,15 @@
 
   <!-- ===== CO TERAZ — wielki pasek na górze ===== -->
   <div class="coteraz-bar" id="coteraz">
-    <span class="coteraz-icon" id="coteraz-icon">🎯</span>
-    <span class="coteraz-text" id="coteraz-text">Wybierz pytanie aby rozpocząć</span>
+    <span class="coteraz-icon" id="coteraz-icon">🔌</span>
+    <span class="coteraz-text" id="coteraz-text">Podłącz hosta ESP32 przez USB aby rozpocząć</span>
   </div>
 
   <!-- ===== Mini status bar ===== -->
   <div class="mini-status">
     <div class="status-left">
-      <span class="conn-dot" id="conn-dot">🟡</span>
-      <span id="conn-text">Tryb demo</span>
+      <span class="conn-dot" id="conn-dot">🔴</span>
+      <span id="conn-text">Nie połączono</span>
       <span class="sep">·</span>
       <span id="buzzer-info">Buzzery: <b id="buzzer-state">LOCKED</b></span>
       <span id="buzzer-who"></span>
@@ -27,67 +27,70 @@
       <span>Runda <b id="round-num">1</b><span class="muted"> ×<b id="mnoznik-num">1</b></span></span>
     </div>
     <div class="status-right">
-      <button class="btn-tiny" id="btn-polacz" title="Połącz host ESP32">🔗</button>
       <button class="btn-tiny" id="btn-settings" title="Ustawienia zaawansowane (⚙)">⚙</button>
       <button class="btn-tiny" id="btn-debug-toggle" title="Debug (F9)">🔍</button>
       <button class="btn-tiny" id="btn-pomoc" title="Pomoc (F1)">❓</button>
     </div>
   </div>
 
-  <!-- ===== Główny obszar — wizard ===== -->
+  <!-- ===== Główny obszar — 3-krokowy wizard ===== -->
   <div class="main-area">
 
-    <!-- Setup section (widoczne gdy brak pytania) -->
-    <div class="setup-section" id="setup-section">
-      <div class="setup-card">
-        <h2>Rozpocznij grę</h2>
-        <div class="setup-field">
+    <!-- Krok 1: Połącz z hostem -->
+    <div class="wizard-step" id="wizard-connect">
+      <div class="wizard-card">
+        <div class="wizard-icon">🔌</div>
+        <h2>Połącz z hostem ESP32</h2>
+        <p>Podłącz ESP32 hosta przez USB, a następnie kliknij przycisk poniżej.</p>
+        <p class="wizard-hint">💡 Wymagane: Chrome lub Edge<br>(Web Serial API)</p>
+        <button class="btn-connect" id="btn-wizard-connect">🔗 Połącz z hostem ESP32</button>
+        <p class="wizard-serial-warn" id="warn-no-serial" style="display:none">
+          ⚠ Web Serial API niedostępne. Użyj Chrome lub Edge.
+        </p>
+      </div>
+    </div>
+
+    <!-- Krok 2: Wybierz zestaw pytań -->
+    <div class="wizard-step" id="wizard-choose" style="display:none">
+      <div class="wizard-card">
+        <div class="wizard-icon">📋</div>
+        <h2>Wybierz zestaw pytań</h2>
+        <div class="wizard-field">
           <label for="wybor-zestawu">Zestaw pytań:</label>
           <select id="wybor-zestawu" class="select-style"></select>
         </div>
-        <div class="setup-field">
-          <label for="wybor-pytania">Pytanie:</label>
-          <select id="wybor-pytania" class="select-style">
-            <option value="">— wybierz —</option>
-          </select>
-        </div>
-        <div class="setup-nav">
-          <button class="btn-nav" id="btn-poprzednie" title="Poprzednie (←)">← Poprzednie</button>
-          <button class="btn-nav" id="btn-nastepne" title="Następne (→)">Następne →</button>
-        </div>
-        <div class="setup-hint">
-          💡 Wybierz pytanie z listy, przeczytaj je na głos, a potem kliknij <b>UZBRÓJ</b>.
-        </div>
+        <button class="btn-start-game" id="btn-wizard-start">Rozpocznij grę 🎮</button>
       </div>
     </div>
 
-    <!-- Question display (widoczne gdy wybrano pytanie) -->
-    <div class="question-display" id="question-display" style="display:none">
-      <div class="question-label">Pytanie:</div>
-      <div class="question-text" id="question-text"></div>
-    </div>
-
-    <!-- Answers + bank + akcje (widoczne gdy wybrano pytanie) -->
-    <div class="play-area" id="play-area" style="display:none">
-
-      <!-- Lista odpowiedzi -->
-      <div class="answers-section">
-        <div class="answers-list" id="answers-list"></div>
+    <!-- Krok 3: Gra (pytanie + odpowiedzi + akcje) -->
+    <div class="wizard-step" id="wizard-game" style="display:none">
+      <div class="question-display" id="question-display">
+        <div class="question-label">Pytanie:</div>
+        <div class="question-text" id="question-text"></div>
+        <div class="question-set-name" id="question-set-name"></div>
       </div>
 
-      <!-- Bank + iksy info -->
-      <div class="info-bar">
-        <div class="info-bank">
-          <span class="info-label">Bank:</span>
-          <span class="info-value" id="bank-value">0</span>
+      <div class="play-area" id="play-area">
+        <!-- Lista odpowiedzi -->
+        <div class="answers-section">
+          <div class="answers-list" id="answers-list"></div>
         </div>
-        <div class="info-iksy" id="info-iksy"></div>
+
+        <!-- Bank + iksy info -->
+        <div class="info-bar">
+          <div class="info-bank">
+            <span class="info-label">Bank:</span>
+            <span class="info-value" id="bank-value">0</span>
+          </div>
+          <div class="info-iksy" id="info-iksy"></div>
+        </div>
+
+        <!-- Strefa akcji — zmienia się dynamicznie -->
+        <div class="action-zone" id="action-zone"></div>
       </div>
 
-      <!-- Strefa akcji — zmienia się zależnie od fazy -->
-      <div class="action-zone" id="action-zone">
-        <!-- Renderowane dynamicznie przez _renderActionZone() -->
-      </div>
+      <a class="change-set-link" id="link-change-set">← zmień zestaw</a>
     </div>
   </div>
 
@@ -151,7 +154,7 @@
         </div>
 
         <div class="settings-row">
-          <label>Symuluj buzz (bez sprzętu):</label>
+          <label>Symuluj buzz:</label>
           <div>
             <button class="btn-small" id="btn-buzz1">Buzz D1 (F2)</button>
             <button class="btn-small" id="btn-buzz2">Buzz D2 (F3)</button>
@@ -191,8 +194,6 @@
         <div><kbd>R</kbd> — Reset buzerów</div>
         <div><kbd>1</kbd>-<kbd>8</kbd> — Odsłoń odpowiedź</div>
         <div><kbd>X</kbd> — Dodaj iks</div>
-        <div><kbd>→</kbd> / <kbd>PgDn</kbd> — Następne pytanie</div>
-        <div><kbd>←</kbd> / <kbd>PgUp</kbd> — Poprzednie pytanie</div>
         <div><kbd>Q</kbd> — Bank → Drużyna 1</div>
         <div><kbd>W</kbd> — Bank → Drużyna 2</div>
         <div><kbd>Ctrl+Z</kbd> — Cofnij</div>
