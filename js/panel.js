@@ -368,9 +368,9 @@ class Panel {
     el.innerHTML = this.stan.odpowiedzi.map((o, i) => `
       <div class="odpowiedz-wiersz ${o.odslonieta ? 'odslonieta' : ''}" data-id="${o.id}">
         <div class="odpowiedz-numer">${i + 1}</div>
-        <div class="odpowiedz-tekst">${o.odslonieta ? o.tekst : '???'}</div>
-        <div class="odpowiedz-punkty">${o.odslonieta ? o.punkty : '??'}</div>
-        <div class="odpowiedz-akcja">${o.odslonieta ? '✓' : 'klik'}</div>
+        <div class="odpowiedz-tekst">${o.tekst}</div>
+        <div class="odpowiedz-punkty">${o.punkty}</div>
+        <div class="odpowiedz-akcja">${o.odslonieta ? '✓ odsłonięte' : 'odsłoń →'}</div>
       </div>
     `).join('');
 
