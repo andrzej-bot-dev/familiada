@@ -711,6 +711,9 @@ class Panel {
       if (e.ctrlKey && klucz === 'KeyZ') { e.preventDefault(); this.cofnij(); return; }
       if (e.ctrlKey && (klucz === 'KeyY' || (e.shiftKey && klucz === 'KeyZ'))) { e.preventDefault(); this.przywroc(); return; }
 
+      // Nie blokuj skrótów przeglądarki (Ctrl+R, Ctrl+F5, F5, Ctrl+T, etc.)
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
       if (klucz === 'Space') { e.preventDefault(); this.uzbroj(); return; }
       if (klucz === 'KeyR') { e.preventDefault(); this.resetBuzzer(); return; }
       if (klucz === 'KeyX') { e.preventDefault(); this.dodajIks(); return; }

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔧 Debug — Familiada</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0a; color: #0f0; font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 14px; padding: 16px; min-height: 100vh;
+    }
+    h1 { color: #fff; margin-bottom: 12px; font-size: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1400px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .panel {
+      background: #111; border: 1px solid #333; border-radius: 8px; padding: 14px;
+    }
+    .panel h2 { color: #ff0; font-size: 14px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; }
+    button {
+      background: #1a1a2e; color: #0f0; border: 1px solid #0f0; padding: 6px 14px;
+      cursor: pointer; font-family: inherit; font-size: 13px; border-radius: 4px;
+    }
+    button:hover { background: #0f0; color: #000; }
+    button.danger { border-color: #f00; color: #f00; }
+    button.danger:hover { background: #f00; color: #000; }
+    button.warn { border-color: #fa0; color: #fa0; }
+    button.warn:hover { background: #fa0; color: #000; }
+    pre {
+      background: #000; padding: 10px; border-radius: 4px; overflow: auto;
+      max-height: 350px; font-size: 12px; line-height: 1.5;
+      border: 1px solid #222;
+    }
+    .log-line { padding: 1px 0; }
+    .log-info { color: #0f0; }
+    .log-warn { color: #fa0; }
+    .log-err { color: #f00; }
+    .log-serial { color: #0af; }
+    .log-buzz { color: #f0f; font-weight: bold; }
+    .log-time { color: #555; }
+    .state-box {
+      background: #000; padding: 10px; border-radius: 4px; font-size: 12px;
+      max-height: 250px; overflow: auto; border: 1px solid #222; color: #ccc;
+    }
+    .state-key { color: #ff0; }
+    .state-val { color: #0f0; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: bold;
+    }
+    .badge-on { background: #0f0; color: #000; }
+    .badge-off { background: #333; color: #666; }
+    .badge-armed { background: #fa0; color: #000; }
+    .badge-buzzed { background: #f0f; color: #000; }
+    input[type="text"] {
+      background: #000; border: 1px solid #333; color: #0f0; padding: 5px 8px;
+      font-family: inherit; font-size: 13px; border-radius: 4px; width: 120px;
+    }
+    .ping-result { font-size: 12px; color: #888; margin-left: 8px; }
+  </style>
+</head>
+<body>
+  <h1>🔧 Familiada Debug Console</h1>
+  <div class="grid">
+
+    <!-- Serial -->
+    <div class="panel">
+      <h2>📡 Web Serial</h2>
+      <div class="row">
+        <span>Support: <span id="ws-support" class="badge badge-off">?</span></span>
+        <span>Połączony: <span id="ws-connected" class="badge badge-off">NIE</span></span>
+        <span>Tryb: <span id="ws-mode">mock</span></span>
+      </div>
+      <div class="row">
+        <button id="btn-connect">🔗 Połącz</button>
+        <button id="btn-disconnect" class="danger">Rozłącz</button>
+        <button id="btn-ping" class="warn">Ping</button>
+        <span class="ping-result" id="ping-result"></span>
+      </div>
+      <div class="row">
+        <button id="btn-send-arm">Wyślij ARM</button>
+        <button id="btn-send-reset" class="danger">Wyślij RESET</button>
+        <input type="text" id="custom-cmd" placeholder="komenda">
+        <button id="btn-send-custom">Wyślij</button>
+      </div>
+      <div class="row">
+        <button id="btn-sim-buzz1" class="warn">Sim Buzz D1</button>
+        <button id="btn-sim-buzz2" class="warn">Sim Buzz D2</button>
+      </div>
+      <pre id="serial-log"></pre>
+    </div>
+
+    <!-- Stan -->
+    <div class="panel">
+      <h2>🧠 Stan Gry (localStorage)</h2>
+      <div class="state-box" id="state-display">—</div>
+      <div class="row" style="margin-top:8px;">
+        <button id="btn-refresh-state">Odśwież</button>
+        <button id="btn-clear-state" class="danger">Wyczyść stan</button>
+        <button id="btn-copy-state">Kopiuj JSON</button>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="panel" style="grid-column: 1 / -1;">
+      <h2>📋 Log Konsoli (live)</h2>
+      <div class="row">
+        <button id="btn-clear-log">Wyczyść log</button>
+        <label><input type="checkbox" id="autoscroll" checked> Auto-scroll</label>
+      </div>
+      <pre id="console-log" style="max-height: 400px;"></pre>
+    </div>
+
+  </div>
+
+  <script type="module">
+    // === Override console żeby przechwytywać logi ===
+    const logEl = document.getElementById('console-log');
+    const autoscroll = document.getElementById('autoscroll');
+    const entries = [];
+    const MAX_ENTRIES = 200;
+
+    function addLog(level, args) {
+      const ts = new Date().toLocaleTimeString('pl-PL', { hour12: false });
+      const msg = args.map(a => {
+        if (typeof a === 'object') { try { return JSON.stringify(a); } catch { return String(a); } }
+        return String(a);
+      }).join(' ');
+
+      // Klasyfikuj
+      let cls = 'log-info';
+      if (level === 'warn' || level === 'warning') cls = 'log-warn';
+      else if (level === 'error') cls = 'log-err';
+      else if (msg.includes('[Serial]')) cls = 'log-serial';
+      else if (msg.includes('Buzz') || msg.includes('BUZZ')) cls = 'log-buzz';
+
+      const line = document.createElement('div');
+      line.className = `log-line ${cls}`;
+      line.innerHTML = `<span class="log-time">[${ts}]</span> ${msg}`;
+      logEl.appendChild(line);
+      entries.push(line);
+      if (entries.length > MAX_ENTRIES) { entries.shift().remove(); }
+      if (autoscroll.checked) logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    ['log', 'warn', 'error', 'info'].forEach(level => {
+      const orig = console[level].bind(console);
+      console[level] = (...args) => { addLog(level, args); orig(...args); };
+    });
+
+    // === Web Serial Support ===
+    const wsSupport = document.getElementById('ws-support');
+    if ('serial' in navigator) {
+      wsSupport.textContent = 'TAK';
+      wsSupport.className = 'badge badge-on';
+    } else {
+      wsSupport.textContent = 'NIE';
+      wsSupport.className = 'badge badge-off';
+    }
+
+    let port = null, reader = null, writer = null, keepReading = false;
+
+    document.getElementById('btn-connect').onclick = async () => {
+      try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+        keepReading = true;
+        document.getElementById('ws-connected').textContent = 'TAK';
+        document.getElementById('ws-connected').className = 'badge badge-on';
+        document.getElementById('ws-mode').textContent = 'webserial';
+        console.log('[Debug] Połączono z portem serial');
+        readLoop();
+      } catch (e) {
+        console.error('[Debug] Błąd łączenia:', e.message);
+      }
+    };
+
+    async function readLoop() {
+      if (!port) return;
+      const decoder = new TextDecoder();
+      try {
+        while (keepReading) {
+          if (!port.readable) break;
+          reader = port.readable.getReader();
+          try {
+            while (keepReading) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              const txt = decoder.decode(value, { stream: true });
+              console.log('[Serial] ←', txt.trim());
+            }
+          } catch (e) {
+            console.error('[Serial] read error:', e.message);
+          } finally {
+            try { reader.releaseLock(); } catch {}
+            reader = null;
+          }
+          if (!keepReading) break;
+          await new Promise(r => setTimeout(r, 200));
+        }
+      } catch (e) {
+        console.error('[Serial] loop error:', e.message);
+      }
+    }
+
+    async function sendCmd(cmd) {
+      if (!port) { console.warn('[Debug] Brak połączenia serial'); return; }
+      try {
+        const w = port.writable.getWriter();
+        const data = new TextEncoder().encode(cmd + '\n');
+        await w.write(data);
+        w.releaseLock();
+        console.log('[Serial] →', cmd);
+      } catch (e) {
+        console.error('[Serial] write error:', e.message);
+      }
+    }
+
+    document.getElementById('btn-disconnect').onclick = async () => {
+      keepReading = false;
+      if (reader) { await reader.cancel().catch(() => {}); reader = null; }
+      if (port) { await port.close().catch(() => {}); }
+      document.getElementById('ws-connected').textContent = 'NIE';
+      document.getElementById('ws-connected').className = 'badge badge-off';
+      document.getElementById('ws-mode').textContent = 'mock';
+      console.log('[Debug] Rozłączono');
+    };
+
+    document.getElementById('btn-send-arm').onclick = () => sendCmd('ARM');
+    document.getElementById('btn-send-reset').onclick = () => sendCmd('RESET');
+    document.getElementById('btn-send-custom').onclick = () => {
+      const cmd = document.getElementById('custom-cmd').value.trim();
+      if (cmd) sendCmd(cmd);
+    };
+    document.getElementById('custom-cmd').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-send-custom').click();
+    });
+
+    let pingStart = 0;
+    document.getElementById('btn-ping').onclick = () => {
+      pingStart = performance.now();
+      sendCmd('PING');
+      // Czekaj na PONG w readLoop — prosty timeout
+      setTimeout(() => {
+        const el = document.getElementById('ping-result');
+        if (el.textContent === '...') el.textContent = 'brak odpowiedzi';
+      }, 2000);
+      document.getElementById('ping-result').textContent = '...';
+    };
+
+    // Hack: przechwyć PONG
+    const origConsoleLog = console.log;
+    // Nie trzeba — już logujemy wszystko
+
+    // Sim buzz (wysyła przez BroadcastChannel jak mock)
+    document.getElementById('btn-sim-buzz1').onclick = () => {
+      const bc = new BroadcastChannel('familiada-sync');
+      bc.postMessage({ typ: 'KOMENDA', komenda: 'SIM_BUZZ', dane: { druzyna: 1 } });
+      bc.close();
+      console.log('[Debug] Sim buzz D1 (BroadcastChannel)');
+    };
+    document.getElementById('btn-sim-buzz2').onclick = () => {
+      const bc = new BroadcastChannel('familiada-sync');
+      bc.postMessage({ typ: 'KOMENDA', komenda: 'SIM_BUZZ', dane: { druzyna: 2 } });
+      bc.close();
+      console.log('[Debug] Sim buzz D2 (BroadcastChannel)');
+    };
+
+    // === Stan gry z localStorage ===
+    function showState() {
+      const el = document.getElementById('state-display');
+      const raw = localStorage.getItem('familiada-stan');
+      if (!raw) { el.textContent = '— brak zapisanego stanu —'; return; }
+      try {
+        const stan = JSON.parse(raw);
+        let html = '';
+        const keys = ['fazaGry', 'stanBuzzera', 'runda', 'mnoznikRundy', 'pytanieTekst', 'bank', 'ktoBuzznal', 'kontrola'];
+        for (const k of keys) {
+          if (k in stan) {
+            let v = stan[k];
+            if (v === null) v = 'null';
+            html += `<div><span class="state-key">${k}</span>: <span class="state-val">${v}</span></div>`;
+          }
+        }
+        // Odpowiedzi
+        if (stan.odpowiedzi) {
+          html += '<div style="margin-top:6px;"><span class="state-key">odpowiedzi</span>:</div>';
+          stan.odpowiedzi.forEach((o, i) => {
+            const status = o.odslonieta ? '✅' : '🔒';
+            html += `<div style="padding-left:12px;">${status} ${i+1}. ${o.tekst} (${o.punkty}pkt)</div>`;
+          });
+        }
+        // Iksy
+        html += `<div style="margin-top:6px;"><span class="state-key">iksy</span>: <span class="state-val">${(stan.iksy||[]).length}/3</span></div>`;
+        // Drużyny
+        if (stan.druzyny) {
+          stan.druzyny.forEach(d => {
+            html += `<div><span class="state-key">${d.nazwa}</span>: <span class="state-val">${d.suma}pkt</span></div>`;
+          });
+        }
+        el.innerHTML = html;
+      } catch (e) {
+        el.textContent = 'Błąd JSON: ' + e.message;
+      }
+    }
+
+    document.getElementById('btn-refresh-state').onclick = showState;
+    document.getElementById('btn-clear-state').onclick = () => {
+      localStorage.removeItem('familiada-stan');
+      showState();
+      console.log('[Debug] Wyczyszczono stan z localStorage');
+    };
+    document.getElementById('btn-copy-state').onclick = () => {
+      const raw = localStorage.getItem('familiada-stan') || '{}';
+      navigator.clipboard.writeText(raw).then(() => console.log('[Debug] Stan skopiowany do schowka'));
+    };
+
+    // Auto-odśwież stan co 2s
+    setInterval(showState, 2000);
+    showState();
+
+    // === Czyść log ===
+    document.getElementById('btn-clear-log').onclick = () => {
+      logEl.innerHTML = '';
+      entries.length = 0;
+    };
+
+    // Nasłuchuj PONG
+    const _origAddLog = addLog;
+    // Prosty hack — sprawdzaj czy log zawiera PONG
+    // (już logujemy wszystko przez console override)
+
+    console.log('[Debug] Debug console gotowy. Otwórz panel w drugiej karcie.');
+  </script>
+</body>
+</html>
