@@ -459,26 +459,52 @@ class Panel {
       el.innerHTML = '<div class="puste-info">Brak odpowiedzi</div>';
       return;
     }
-    el.innerHTML = this.stan.odpowiedzi.map((o, i) => `
-      <div class="odpowiedz-wiersz ${o.odslonieta ? 'odslonieta' : 'nieodslonieta'}" data-id="${o.id}">
-        <div class="odpowiedz-numer">${i + 1}</div>
-        <div class="odpowiedz-tekst">${o.tekst}</div>
-        <div class="odpowiedz-punkty">${o.punkty} pkt</div>
-        <div class="odpowiedz-akcja">${o.odslonieta ? '✓ na planszy' : '📁 odsłoń'}</div>
-      </div>
-    `).join('');
 
-    el.querySelectorAll('.odpowiedz-wiersz').forEach(w => {
-      w.addEventListener('click', () => {
-        const id = parseInt(w.dataset.id, 10);
-        const odp = this.stan.odpowiedzi[id];
-        if (odp.odslonieta) {
-          this.dispatch({ typ: 'UKRYJ_ODPOWIEDZ', id });
-        } else {
-          this.odslonOdpowiedz(id);
-        }
+    // Czy można klikać odpowiedzi?
+    const faza = this.stan.fazaGry;
+    const buzzed = this.stan.stanBuzzera === STAN_BUZZERA.BUZZED;
+    const canClick = (faza === STAN_GRY.GRA && buzzed) || faza === STAN_GRY.PRZEJECIE;
+
+    el.innerHTML = this.stan.odpowiedzi.map((o, i) => {
+      const cls = o.odslonieta ? 'odslonieta' : (canClick ? 'klikalna' : 'zablokowana');
+      const akcja = o.odslonieta ? '✓ na planszy' : (canClick ? '📁 odsłoń' : '🔒');
+      return `
+        <div class="odpowiedz-wiersz ${cls}" data-id="${o.id}">
+          <div class="odpowiedz-numer">${i + 1}</div>
+          <div class="odpowiedz-tekst">${o.tekst}</div>
+          <div class="odpowiedz-punkty">${o.punkty} pkt</div>
+          <div class="odpowiedz-akcja">${akcja}</div>
+        </div>`;
+    }).join('');
+
+    if (canClick) {
+      el.querySelectorAll('.odpowiedz-wiersz:not(.odslonieta)').forEach(w => {
+        w.addEventListener('click', () => {
+          const id = parseInt(w.dataset.id, 10);
+          this._klikOdpowiedz(id);
+        });
       });
-    });
+    }
+  }
+
+  _klikOdpowiedz(id) {
+    const faza = this.stan.fazaGry;
+    if (faza === STAN_GRY.PRZEJECIE) {
+      // W przejęciu — odsłoń odpowiedź, a potem bank dla przejmującej automatycznie
+      this.odslonOdpowiedz(id);
+      // Krótkie opóźnienie żeby plansza pokazała animację
+      setTimeout(() => {
+        const [d1, d2] = this.stan.druzyny;
+        const przejmujaca = this.stan.kontrola === d1?.id ? d2 : d1;
+        // Odsłoń resztę
+        this.stan.odpowiedzi.forEach(o => {
+          if (!o.odslonieta) this.dispatch({ typ: 'ODSLON_ODPOWIEDZ', id: o.id });
+        });
+        this.bankDlaDruzyny(przejmujaca.id);
+      }, 1000);
+    } else {
+      this.odslonOdpowiedz(id);
+    }
   }
 
   _renderInfoBar() {
@@ -515,8 +541,12 @@ class Panel {
 
     // ===== KONIEC RUNDY / allRevealed =====
     if (faza === STAN_GRY.KONIEC_RUNDY || allRevealed) {
+      // Ukryj "Następna runda" dopóki bank > 0
+      const bankRozdany = this.stan.bank === 0;
+      const naglowek = bankRozdany ? '<div class="action-msg">Bank rozdany! ✓</div>' : '<div class="action-msg">Kto wygrał rundę? Przydziel bank:</div>';
       el.innerHTML = `
-        <div class="action-msg">Wszystko odsłonięte — przydziel bank!</div>
+        ${naglowek}
+        ${!bankRozdany ? `
         <div class="action-row">
           <button class="btn-big btn-bank-big" id="az-bank-d1">
             <span>${d1?.skrot || 'D1'}</span>
@@ -526,12 +556,15 @@ class Panel {
             <span>${d2?.skrot || 'D2'}</span>
             <span class="btn-sub">← Bank (${this.stan.bank})</span>
           </button>
-        </div>
-        <button class="btn-big btn-next-round" id="az-next-round">Następna runda →</button>
+        </div>` : ''}
+        ${bankRozdany ? '<button class="btn-big btn-next-round" id="az-next-round">Następna runda →</button>' : ''}
       `;
-      document.getElementById('az-bank-d1').onclick = () => this.bankDlaDruzyny(d1.id);
-      document.getElementById('az-bank-d2').onclick = () => this.bankDlaDruzyny(d2.id);
-      document.getElementById('az-next-round').onclick = () => this.nastepnaRunda();
+      if (!bankRozdany) {
+        document.getElementById('az-bank-d1').onclick = () => this.bankDlaDruzyny(d1.id);
+        document.getElementById('az-bank-d2').onclick = () => this.bankDlaDruzyny(d2.id);
+      } else {
+        document.getElementById('az-next-round').onclick = () => this.nastepnaRunda();
+      }
       return;
     }
 
@@ -541,17 +574,13 @@ class Panel {
       const broniaca = this.stan.kontrola === d1?.id ? d1 : d2;
       el.innerHTML = `
         <div class="action-msg przejecie">💰 PRZEJĘCIE!</div>
-        <div class="action-msg">"${przejmujaca?.nazwa}" ma jedną szansę</div>
+        <div class="action-msg">"${przejmujaca?.nazwa}" zgaduje — kliknij trafioną odpowiedź powyżej albo:</div>
         <div class="action-row">
-          <button class="btn-big btn-przejecie-big" id="az-przejecie">
-            Trafione — Przejęcie!
-          </button>
           <button class="btn-big btn-bank-big" id="az-obrona">
-            Pudło — Bank dla ${broniaca?.skrot || 'D'}
+            ✕ Pudło — Bank dla ${broniaca?.skrot || 'D'}
           </button>
         </div>
       `;
-      document.getElementById('az-przejecie').onclick = () => this.przejecieAkcja();
       document.getElementById('az-obrona').onclick = () => this.obronaAkcja();
       return;
     }
@@ -771,9 +800,13 @@ class Panel {
       if (klucz.startsWith('Digit')) {
         const n = parseInt(klucz.replace('Digit', ''), 10);
         if (n >= 1 && n <= 8 && this.stan?.odpowiedzi?.[n - 1]) {
+          const faza = this.stan.fazaGry;
+          const buzzed = this.stan.stanBuzzera === STAN_BUZZERA.BUZZED;
+          const canClick = (faza === STAN_GRY.GRA && buzzed) || faza === STAN_GRY.PRZEJECIE;
+          if (!canClick) return;
           e.preventDefault();
           const o = this.stan.odpowiedzi[n - 1];
-          if (!o.odslonieta) this.odslonOdpowiedz(n - 1);
+          if (!o.odslonieta) this._klikOdpowiedz(n - 1);
           return;
         }
       }

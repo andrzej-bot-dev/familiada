@@ -166,6 +166,22 @@ body {
   border-radius: 6px;
   background: var(--kolor-tla-panel);
 }
+.odpowiedz-wiersz.zablokowana {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.odpowiedz-wiersz.zablokowana:hover {
+  background: var(--kolor-tla-karty);
+  border-color: var(--kolor-border);
+}
+.odpowiedz-wiersz.klikalna {
+  cursor: pointer;
+}
+.odpowiedz-wiersz.klikalna:hover {
+  background: var(--kolor-tla-karty-hover);
+  border-color: var(--kolor-akcent);
+  transform: translateX(4px);
+}
 .odslonieta .odpowiedz-akcja {
   color: var(--kolor-akcent);
 }
