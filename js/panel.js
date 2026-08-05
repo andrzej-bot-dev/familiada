@@ -343,7 +343,7 @@ class Panel {
   cofnij() {
     // Blokuj undo podczas aktywnego pojedynku — flow.reset() zniszczyłby stan pojedynku
     if (this.flow?.pojedynek) {
-      console.warn('Undo zablokowane podczas pojedynku');
+      this.debug?.log('⚠️ Undo zablokowane podczas pojedynku');
       return;
     }
     const nowy = this.historia.undo(this.stan);
@@ -411,6 +411,8 @@ class Panel {
     if (!this.stan) return;
     const stanDlaPlanszy = {
       ...this.stan,
+      // Podczas pojedynku nie wysyłaj IKS-ów do planszy — nie liczą się do gry
+      iksy: this.flow?.pojedynek ? [] : this.stan.iksy,
       _konfiguracjaTytul: this.konfiguracja.wydarzenie?.tytul || 'Familiada',
       _pokazujBank: this.konfiguracja.zasady?.pokazujBank !== false
     };
@@ -496,7 +498,7 @@ class Panel {
         if (n >= 1 && n <= 8 && this.stan?.odpowiedzi?.[n - 1]) {
           const faza = this.stan.fazaGry;
           const buzzed = this.stan.stanBuzzera === STAN_BUZZERA.BUZZED;
-          const canClick = (faza === STAN_GRY.GRA && buzzed) || faza === STAN_GRY.PRZEJECIE;
+          const canClick = (faza === STAN_GRY.GRA && buzzed && this.stan.iksy.length < 3) || faza === STAN_GRY.PRZEJECIE;
           if (!canClick) return;
           e.preventDefault();
           const o = this.stan.odpowiedzi[n - 1];

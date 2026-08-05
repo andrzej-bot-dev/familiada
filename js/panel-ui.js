@@ -115,7 +115,9 @@ export class PanelUI {
     const buzzed = this.p.stan.stanBuzzera === STAN_BUZZERA.BUZZED;
     // W przejęciu: blokuj po wybraniu odpowiedzi
     const przejecieZablokowane = faza === STAN_GRY.PRZEJECIE && this.p.flow?.przejecieOdpowiedz !== null;
-    const canClick = ((faza === STAN_GRY.GRA && buzzed) || faza === STAN_GRY.PRZEJECIE) && !przejecieZablokowane;
+    // Blokuj klikanie odpowiedzi po 3 IKS (czekamy na auto-przejęcie 600ms)
+    const iksyZablokowane = faza === STAN_GRY.GRA && this.p.stan.iksy.length >= 3;
+    const canClick = ((faza === STAN_GRY.GRA && buzzed) || faza === STAN_GRY.PRZEJECIE) && !przejecieZablokowane && !iksyZablokowane;
 
     el.innerHTML = this.p.stan.odpowiedzi.map((o, i) => {
       const cls = o.odslonieta ? 'odslonieta' : (canClick ? 'klikalna' : 'zablokowana');
