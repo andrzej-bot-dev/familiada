@@ -122,6 +122,9 @@ export function reducer(stan, akcja) {
       return { ...stan, iksy: stan.iksy.slice(0, -1) };
     }
 
+    case 'WYCZYSC_IKSY':
+      return { ...stan, iksy: [] };
+
     case 'PRZEKAZ_KONTROLE':
       return { ...stan, kontrola: akcja.druzynaId, fazaGry: akcja.faza || stan.fazaGry };
 

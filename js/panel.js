@@ -231,11 +231,9 @@ class Panel {
         return;
       } else if (this.pojedynek.tura === 2) {
         // Druga drużyna spudłowała
-        const d1punkty = this.pojedynek.d1?.punkty ?? -1;
-        // Jeśli D1 trafiła (> -1) → D1 wygrywa (D2 spudłowała)
-        // Jeśli D1 też spudłowała (-1) → D1 wygrywa bo buzznęła pierwsza
         this.pojedynek = null;
         this.dispatch({ typ: 'DODAJ_IKS' });
+        this.dispatch({ typ: 'WYCZYSC_IKSY' });  // IKS z pojedynku nie liczą się
         this.dispatch({ typ: 'PRZEKAZ_KONTROLE', druzynaId: this.stan.druzyny[pierwszyBuzz - 1].id });
         graj(audioMap.iks);
         this._render();
@@ -304,6 +302,8 @@ class Panel {
     const nowy = this.historia.undo(this.stan);
     if (nowy) {
       this.stan = nowy;
+      this.pojedynek = null;  // Cofnij = wyjdz z pojedynku
+      this.przejecieOdpowiedz = null;
       this._render();
       this._wyslijStan();
       this._zapiszLocal();
@@ -318,30 +318,6 @@ class Panel {
       this._wyslijStan();
       this._zapiszLocal();
     }
-  }
-
-  przejecieAkcja() {
-    const [d1, d2] = this.stan.druzyny;
-    const przejmujaca = this.stan.kontrola === d1?.id ? d2 : d1;
-    // Jeden zapis historii, jeden dispatch — odsłoń wszystko + bank
-    this.historia.zapisz(this.stan);
-    const nowyStan = { ...this.stan };
-    nowyStan.odpowiedzi = this.stan.odpowiedzi.map(o => ({ ...o, odslonieta: true }));
-    // Policz bank z nowo odsłoniętych
-    const dodatkowe = this.stan.odpowiedzi.filter(o => !o.odslonieta).reduce((s, o) => s + (o.punkty || 0) * (nowyStan.mnoznikRundy || 1), 0);
-    nowyStan.bank = this.stan.bank + dodatkowe;
-    nowyStan.fazaGry = STAN_GRY.KONIEC_RUNDY;
-    // Daj bank drużynie przejmującej
-    nowyStan.druzyny = nowyStan.druzyny.map(d =>
-      d.id === przejmujaca.id ? { ...d, suma: d.suma + nowyStan.bank } : d
-    );
-    nowyStan.bank = 0;
-    this.stan = nowyStan;
-    this._render();
-    this._wyslijStan();
-    this._zapiszLocal();
-    const audioMap = this.konfiguracja.audio?.mapowanie || {};
-    graj(audioMap.poprawna);
   }
 
   obronaAkcja() {
@@ -447,6 +423,14 @@ class Panel {
         break;
 
       case STAN_GRY.GRA: {
+        if (this.pojedynek) {
+          const d = this.stan.druzyny[(this.pojedynek.tura === 1
+            ? this.pojedynek.pierwszyBuzz
+            : (this.pojedynek.pierwszyBuzz === 1 ? 2 : 1)) - 1];
+          txt = `🔔 Pojedynek — ${d?.nazwa || ''} odpowiada`;
+          ikona = '🔔';
+          break;
+        }
         const ktoGra = this.stan.druzyny.find(d => d.id === this.stan.kontrola) || d1;
         if (czyWszystkoOdslonięte(this.stan)) {
           txt = 'Wszystko odsłonięte! Przydziel bank';
@@ -588,7 +572,7 @@ class Panel {
         if (odp.punkty >= najwyzsza) {
           // Najwyższa — wygrywa pojedynek
           this.pojedynek = null;
-          // kontrola już ustawiona przez BUZZ na pierwszą
+          this.dispatch({ typ: 'WYCZYSC_IKSY' });  // IKS-y z pojedynku nie liczą się
         } else {
           // Nie najwyższa — druga drużyna odpowiada
           this.pojedynek.tura = 2;
@@ -601,14 +585,12 @@ class Panel {
 
         let wygrana;
         if (d2punkty > d1punkty) {
-          // Druga drużyna wygrywa — przejmij kontrolę
           wygrana = drugiBuzz;
         } else {
-          // Pierwsza wygrywa (remis = pierwszy wygrywa, bo buzznął pierwszy)
           wygrana = pierwszyBuzz;
         }
         this.pojedynek = null;
-        // Ustaw kontrolę na zwycięzcę pojedynku
+        this.dispatch({ typ: 'WYCZYSC_IKSY' });  // IKS-y z pojedynku nie liczą się
         this.dispatch({ typ: 'PRZEKAZ_KONTROLE', druzynaId: this.stan.druzyny[wygrana - 1].id });
       }
       this._render();
@@ -650,7 +632,11 @@ class Panel {
 
     // ===== KONIEC GRY =====
     if (faza === STAN_GRY.KONIEC_GRY) {
-      el.innerHTML = `<div class="action-msg">🏆 Gra zakończona!</div>`;
+      el.innerHTML = `
+        <div class="action-msg">🏆 Gra zakończona!</div>
+        ${sub('Kliknij "Nowa gra" aby zagrać ponownie z tym samym zestawem.')}
+        <button class="btn-big btn-uzbroj" id="az-nowa-gra">🔄 Nowa gra</button>`;
+      document.getElementById('az-nowa-gra').onclick = () => this.nowaGra();
       return;
     }
 
