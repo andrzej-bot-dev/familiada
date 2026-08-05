@@ -101,7 +101,7 @@ export function actionSub(stan, pojedynek, przejecieOdpowiedz) {
     if (przejecieOdpowiedz === null) {
       return `${przejmujaca?.nazwa} podaje jedną odpowiedź. Kliknij ją powyżej jeśli trafiona. Pudło → bank dla ${broniaca?.nazwa}.`;
     }
-    return 'Odsłonimy pozostałe odpowiedzi na planszy.';
+    return `Odsłoń pozostałe odpowiedzi. Bank (${stan.bank} pkt) przejdzie na konto ${przejmujaca?.nazwa}.`;
   }
 
   if (armed) {

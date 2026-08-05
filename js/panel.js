@@ -8,7 +8,7 @@ import { Historia } from './historia.js';
 import { Sync } from './sync.js';
 import { wczytajProfil, listaProfili, DOMYSLNY_PROFIL } from './konfiguracja.js';
 import { wczytajZestaw, wczytajIndeks, dajPytania, losujPytania } from './pytania.js';
-import { czyPrzejecie } from './zasady.js';
+import { czyPrzejecie, czyWszystkoOdslonięte } from './zasady.js';
 import { WebSerialTransport } from './transport/webserial.js';
 import { graj, ustawGlosnosc, ustawWlaczone, odblokujAudio, preload } from './audio.js';
 import { Debug } from './debug.js';
@@ -126,8 +126,10 @@ class Panel {
     }
     this.stan = reducer(this.stan, akcja);
     this.ui.render();
-    this._wyslijStan();
-    this._zapiszLocal();
+    if (!this._batchSync) {
+      this._wyslijStan();
+      this._zapiszLocal();
+    }
 
     // Auto-detekcja: po odsłonięciu sprawdź czy wszystko odsłonięte
     if (akcja.typ === 'ODSLON_ODPOWIEDZ') {
@@ -148,11 +150,23 @@ class Panel {
   _wykonaj(result) {
     if (!result) return;
 
+    // Batch sync — nie wysyłaj stanu do planszy przy każdym dispatch
+    if (result.dispatches?.length > 1) {
+      this._batchSync = true;
+    }
+
     // Dispatche
     if (result.dispatches?.length) {
       for (const akcja of result.dispatches) {
         this.dispatch(akcja);
       }
+    }
+
+    // Flush batch — wyślij stan raz po wszystkich dispatchach
+    if (this._batchSync) {
+      this._batchSync = false;
+      this._wyslijStan();
+      this._zapiszLocal();
     }
 
     // Bezpośrednia zmiana stanu (przejecieTrafiona, przejeciePudlo)
@@ -327,6 +341,11 @@ class Panel {
   }
 
   cofnij() {
+    // Blokuj undo podczas aktywnego pojedynku — flow.reset() zniszczyłby stan pojedynku
+    if (this.flow?.pojedynek) {
+      console.warn('Undo zablokowane podczas pojedynku');
+      return;
+    }
     const nowy = this.historia.undo(this.stan);
     if (nowy) {
       this.stan = nowy;
@@ -465,6 +484,12 @@ class Panel {
         if (this.stan.fazaGry === STAN_GRY.GRA || this.flow?.pojedynek) this.dodajIks();
         return;
       }
+      if (klucz === 'KeyP') {
+        e.preventDefault();
+        // P = Pudło w przejęciu
+        if (this.stan?.fazaGry === STAN_GRY.PRZEJECIE && !this.flow?.przejecieOdpowiedz) this.przejeciePudlo();
+        return;
+      }
 
       if (klucz.startsWith('Digit')) {
         const n = parseInt(klucz.replace('Digit', ''), 10);
@@ -482,13 +507,13 @@ class Panel {
 
       if (klucz === 'KeyQ') {
         e.preventDefault();
-        // Bank tylko w KONIEC_RUNDY
-        if (this.stan?.fazaGry === STAN_GRY.KONIEC_RUNDY && this.stan?.druzyny?.[0]) this.bankDlaDruzyny(this.stan.druzyny[0].id);
+        // Bank w KONIEC_RUNDY lub gdy wszystkie odsłoniete (300ms okno przed auto-transition)
+        if ((this.stan?.fazaGry === STAN_GRY.KONIEC_RUNDY || czyWszystkoOdslonięte(this.stan)) && this.stan?.druzyny?.[0]) this.bankDlaDruzyny(this.stan.druzyny[0].id);
         return;
       }
       if (klucz === 'KeyW') {
         e.preventDefault();
-        if (this.stan?.fazaGry === STAN_GRY.KONIEC_RUNDY && this.stan?.druzyny?.[1]) this.bankDlaDruzyny(this.stan.druzyny[1].id);
+        if ((this.stan?.fazaGry === STAN_GRY.KONIEC_RUNDY || czyWszystkoOdslonięte(this.stan)) && this.stan?.druzyny?.[1]) this.bankDlaDruzyny(this.stan.druzyny[1].id);
         return;
       }
 

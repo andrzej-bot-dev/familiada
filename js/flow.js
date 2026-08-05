@@ -195,7 +195,7 @@ export class Flow {
         return { dispatches, audio: 'iks', needsRender: true };
       }
 
-      // Tura 2 — druga drużyna też spudłowała
+      // Tura 2 — druga drużyna zakończyła pojedynek (spudłowała)
       // Koniec pojedynku, IKS-y są czyszczone, kontrola do pierwszej drużyny
       this.pojedynek = null;
       dispatches.push({ typ: 'DODAJ_IKS' });
@@ -286,9 +286,11 @@ export class Flow {
     const druzyny = stan.druzyny.map(d =>
       d.id === broniaca.id ? { ...d, suma: d.suma + stan.bank } : d
     );
+    // Odsłoń wszystkie odpowiedzi dla publiczności (jak w prawdziwej Familiadzie)
+    const odpowiedzi = stan.odpowiedzi.map(o => ({ ...o, odslonieta: true }));
     this.przejecieOdpowiedz = null;
     return {
-      newStan: { ...stan, bank: 0, druzyny, fazaGry: STAN_GRY.KONIEC_RUNDY }
+      newStan: { ...stan, odpowiedzi, bank: 0, druzyny, fazaGry: STAN_GRY.KONIEC_RUNDY }
     };
   }
 
