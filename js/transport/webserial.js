@@ -65,34 +65,50 @@ export class WebSerialTransport extends Transport {
   async _czytaj() {
     if (!this.port) return;
     const decoder = new TextDecoder();
+    console.log('[Serial] _czytaj() start, readable:', !!this.port.readable);
 
     try {
       while (this.keepReading) {
+        if (!this.port.readable) {
+          console.warn('[Serial] port.readable = null, czekam...');
+          await new Promise(r => setTimeout(r, 200));
+          continue;
+        }
+
         this.reader = this.port.readable.getReader();
+        console.log('[Serial] reader pobrany, czekam na dane...');
+
         try {
           while (this.keepReading) {
             const { done, value } = await this.reader.read();
-            if (done) break;
-            // value to Uint8Array — dekoduj ręcznie
-            this.buffer += decoder.decode(value, { stream: true });
-            this._parsuj();
+            if (done) {
+              console.log('[Serial] stream zakończony (done=true)');
+              break;
+            }
+            if (value) {
+              const txt = decoder.decode(value, { stream: true });
+              console.log('[Serial] RAW bytes:', value.length, '→', JSON.stringify(txt.substring(0, 80)));
+              this.buffer += txt;
+              this._parsuj();
+            }
           }
         } catch (e) {
-          console.error('[Serial] Błąd czytania:', e);
+          console.error('[Serial] Błąd czytania:', e.message || e);
         } finally {
           try { this.reader.releaseLock(); } catch {}
           this.reader = null;
         }
 
-        if (!this.keepReading || !this.port?.readable) break;
-        // Krótka pauza przed próbą ponownego czytania
-        await new Promise(r => setTimeout(r, 100));
+        if (!this.keepReading) break;
+        console.log('[Serial] reconnect loop, czekam 200ms...');
+        await new Promise(r => setTimeout(r, 200));
       }
     } catch (e) {
       console.error('[Serial] Błąd strumienia:', e);
     } finally {
       this.polaczony = false;
       this.reader = null;
+      console.log('[Serial] _czytaj() zakończone');
     }
   }
 
