@@ -113,7 +113,9 @@ export class PanelUI {
 
     const faza = this.p.stan.fazaGry;
     const buzzed = this.p.stan.stanBuzzera === STAN_BUZZERA.BUZZED;
-    const canClick = (faza === STAN_GRY.GRA && buzzed) || faza === STAN_GRY.PRZEJECIE;
+    // W przejęciu: blokuj po wybraniu odpowiedzi
+    const przejecieZablokowane = faza === STAN_GRY.PRZEJECIE && this.p.flow?.przejecieOdpowiedz !== null;
+    const canClick = ((faza === STAN_GRY.GRA && buzzed) || faza === STAN_GRY.PRZEJECIE) && !przejecieZablokowane;
 
     el.innerHTML = this.p.stan.odpowiedzi.map((o, i) => {
       const cls = o.odslonieta ? 'odslonieta' : (canClick ? 'klikalna' : 'zablokowana');
@@ -143,7 +145,9 @@ export class PanelUI {
   renderInfoBar() {
     $('bank-value').textContent = this.p.stan?.bank ?? 0;
     const elIksy = $('info-iksy');
-    const n = this.p.stan?.iksy.length ?? 0;
+    // Podczas pojedynku nie pokazuj IKS-ów — nie liczą się do gry
+    const wPojedynku = !!this.p.flow?.pojedynek;
+    const n = wPojedynku ? 0 : (this.p.stan?.iksy.length ?? 0);
     let html = '';
     for (let i = 0; i < 3; i++) {
       html += `<span class="iks-symbol ${i < n ? '' : 'empty'}">✕</span>`;

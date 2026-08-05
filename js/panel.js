@@ -441,9 +441,19 @@ class Panel {
 
       if (!this.transport?.polaczony || !this.stan?.pytanieTekst) return;
 
-      if (klucz === 'Space') { e.preventDefault(); this.uzbroj(); return; }
+      if (klucz === 'Space') {
+        e.preventDefault();
+        // Space = UZBRÓJ tylko w IDLE
+        if (this.stan.fazaGry === STAN_GRY.IDLE) this.uzbroj();
+        return;
+      }
       if (klucz === 'KeyR') { e.preventDefault(); this.resetBuzzer(); return; }
-      if (klucz === 'KeyX') { e.preventDefault(); this.dodajIks(); return; }
+      if (klucz === 'KeyX') {
+        e.preventDefault();
+        // IKS tylko w GRA (po pojedynku) lub POJEDYNEK
+        if (this.stan.fazaGry === STAN_GRY.GRA || this.flow?.pojedynek) this.dodajIks();
+        return;
+      }
 
       if (klucz.startsWith('Digit')) {
         const n = parseInt(klucz.replace('Digit', ''), 10);
@@ -459,8 +469,17 @@ class Panel {
         }
       }
 
-      if (klucz === 'KeyQ') { e.preventDefault(); if (this.stan?.druzyny?.[0]) this.bankDlaDruzyny(this.stan.druzyny[0].id); return; }
-      if (klucz === 'KeyW') { e.preventDefault(); if (this.stan?.druzyny?.[1]) this.bankDlaDruzyny(this.stan.druzyny[1].id); return; }
+      if (klucz === 'KeyQ') {
+        e.preventDefault();
+        // Bank tylko w KONIEC_RUNDY
+        if (this.stan?.fazaGry === STAN_GRY.KONIEC_RUNDY && this.stan?.druzyny?.[0]) this.bankDlaDruzyny(this.stan.druzyny[0].id);
+        return;
+      }
+      if (klucz === 'KeyW') {
+        e.preventDefault();
+        if (this.stan?.fazaGry === STAN_GRY.KONIEC_RUNDY && this.stan?.druzyny?.[1]) this.bankDlaDruzyny(this.stan.druzyny[1].id);
+        return;
+      }
 
       if (klucz === 'Escape') {
         document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none');

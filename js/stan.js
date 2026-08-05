@@ -59,7 +59,8 @@ export function reducer(stan, akcja) {
       return { ...stan, stanBuzzera: STAN_BUZZERA.ARMED, ktoBuzznal: null, fazaGry: STAN_GRY.POJEDYNEK };
 
     case 'RESET_BUZZER':
-      return { ...stan, stanBuzzera: STAN_BUZZERA.LOCKED, ktoBuzznal: null };
+      // Pełny reset: buzzer LOCKED + faza → IDLE + wyczyść kto buzznął
+      return { ...stan, stanBuzzera: STAN_BUZZERA.LOCKED, ktoBuzznal: null, fazaGry: STAN_GRY.IDLE };
 
     case 'BUZZ': {
       if (stan.stanBuzzera !== STAN_BUZZERA.ARMED) return stan;
