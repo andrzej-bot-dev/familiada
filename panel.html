@@ -8,158 +8,187 @@
   <link rel="stylesheet" href="css/panel.css">
 </head>
 <body>
-  <!-- Górny pasek: CO TERAZ -->
-  <div class="pasek-coteraz" id="pasek-coteraz">
-    <div class="coteraz-ikona" id="coteraz-ikona">🎯</div>
-    <div class="coteraz-tekst" id="coteraz-tekst">Wybierz pytanie aby rozpocząć</div>
+
+  <!-- ===== CO TERAZ — wielki pasek na górze ===== -->
+  <div class="coteraz-bar" id="coteraz">
+    <span class="coteraz-icon" id="coteraz-icon">🎯</span>
+    <span class="coteraz-text" id="coteraz-text">Wybierz pytanie aby rozpocząć</span>
   </div>
 
-  <!-- Status bar -->
-  <div class="status-bar">
-    <div class="status-item" id="status-polaczenie">
-      <span class="status-dot" id="status-dot">🔴</span>
-      <span id="status-tekst">Nie połączono</span>
+  <!-- ===== Mini status bar ===== -->
+  <div class="mini-status">
+    <div class="status-left">
+      <span class="conn-dot" id="conn-dot">🟡</span>
+      <span id="conn-text">Tryb demo</span>
+      <span class="sep">·</span>
+      <span id="buzzer-info">Buzzery: <b id="buzzer-state">LOCKED</b></span>
+      <span id="buzzer-who"></span>
+      <span class="sep">·</span>
+      <span>Runda <b id="round-num">1</b><span class="muted"> ×<b id="mnoznik-num">1</b></span></span>
     </div>
-    <div class="status-item" id="status-buzzer-info">
-      <span id="status-stan-buzzera">LOCKED</span>
-      <span id="status-kto-buzznal"></span>
+    <div class="status-right">
+      <button class="btn-tiny" id="btn-polacz" title="Połącz host ESP32">🔗</button>
+      <button class="btn-tiny" id="btn-settings" title="Ustawienia zaawansowane (⚙)">⚙</button>
+      <button class="btn-tiny" id="btn-debug-toggle" title="Debug (F9)">🔍</button>
+      <button class="btn-tiny" id="btn-pomoc" title="Pomoc (F1)">❓</button>
     </div>
-    <div class="status-item">
-      <span>Runda: <b id="status-runda">1</b></span>
-      <span>×<b id="status-mnoznik">1</b></span>
-    </div>
-    <button class="przycisk-maly" id="btn-polacz">🔗 Połącz</button>
-    <button class="przycisk-maly" id="btn-debug-toggle">🔍 Debug (F9)</button>
-    <button class="przycisk-maly" id="btn-pomoc">❓ Pomoc (F1)</button>
   </div>
 
-  <!-- Główny obszar -->
-  <div class="panel-glowny">
-    <!-- Lewa kolumna: pytania i kontrola -->
-    <div class="kolumna kolumna-lewa">
-      <div class="sekcja">
-        <h3>Zestaw pytań</h3>
-        <select id="wybor-zestawu" class="wybor-select">
-          <option value="">— wybierz zestaw —</option>
-        </select>
-        <h3>Pytanie</h3>
-        <select id="wybor-pytania" class="wybor-select">
-          <option value="">— wybierz —</option>
-        </select>
-        <div class="kontrolki-rundy">
-          <button class="przycisk przycisk-przedni" id="btn-nastepne" title="Następne pytanie (→)">Następne →</button>
-          <button class="przycisk przycisk-przedni" id="btn-poprzednie" title="Poprzednie (←)">← Poprzednie</button>
-        </div>
-        <div class="mnoznik-kontrola">
-          <label>Mnożnik rundy: </label>
-          <button class="przycisk-maly mnoznik-btn" data-m="1">×1</button>
-          <button class="przycisk-maly mnoznik-btn" data-m="2">×2</button>
-          <button class="przycisk-maly mnoznik-btn" data-m="3">×3</button>
-        </div>
-      </div>
+  <!-- ===== Główny obszar — wizard ===== -->
+  <div class="main-area">
 
-      <div class="sekcja">
-        <h3>Buzzery</h3>
-        <div class="buzzer-kontrola">
-          <button class="przycisk przycisk-uzbroj" id="btn-uzbroj" title="Uzbrój (Spacja)">⚔ UZBRÓJ</button>
-          <button class="przycisk przycisk-reset" id="btn-reset" title="Reset (R)">↻ RESET</button>
+    <!-- Setup section (widoczne gdy brak pytania) -->
+    <div class="setup-section" id="setup-section">
+      <div class="setup-card">
+        <h2>Rozpocznij grę</h2>
+        <div class="setup-field">
+          <label for="wybor-zestawu">Zestaw pytań:</label>
+          <select id="wybor-zestawu" class="select-style"></select>
         </div>
-        <div class="symulacja-buzz">
-          <span class="label-symulacja">Symuluj buzz:</span>
-          <button class="przycisk-maly" id="btn-buzz1" title="F2">Buzz 1</button>
-          <button class="przycisk-maly" id="btn-buzz2" title="F3">Buzz 2</button>
+        <div class="setup-field">
+          <label for="wybor-pytania">Pytanie:</label>
+          <select id="wybor-pytania" class="select-style">
+            <option value="">— wybierz —</option>
+          </select>
         </div>
-      </div>
-
-      <div class="sekcja">
-        <h3>Iksy / Przejęcie</h3>
-        <div class="iksy-kontrola">
-          <button class="przycisk przycisk-iks" id="btn-iks" title="Dodaj iks (X)">✕ IKS</button>
-          <button class="przycisk-maly" id="btn-iks-cofnij" title="Cofnij iks">← cofnij iks</button>
+        <div class="setup-nav">
+          <button class="btn-nav" id="btn-poprzednie" title="Poprzednie (←)">← Poprzednie</button>
+          <button class="btn-nav" id="btn-nastepne" title="Następne (→)">Następne →</button>
         </div>
-        <div class="przejecie-kontrola" id="przejecie-kontrola" style="display:none">
-          <button class="przycisk przycisk-przejecie" id="btn-przejecie">Przejęcie!</button>
+        <div class="setup-hint">
+          💡 Wybierz pytanie z listy, przeczytaj je na głos, a potem kliknij <b>UZBRÓJ</b>.
         </div>
       </div>
     </div>
 
-    <!-- Środkowa kolumna: odpowiedzi -->
-    <div class="kolumna kolumna-srodek">
-      <div class="sekcja">
-        <h3>Odpowiedzi <span class="muted">(klik = odsłoń)</span></h3>
-        <div class="lista-odpowiedzi" id="lista-odpowiedzi">
-          <div class="puste-info">Wybierz pytanie aby zobaczyć odpowiedzi</div>
-        </div>
-      </div>
-
-      <div class="sekcja">
-        <h3>Bank rundy</h3>
-        <div class="bank-wyswietlacz" id="bank-wyswietlacz">0</div>
-        <div class="bank-kontrola">
-          <button class="przycisk przycisk-bank" data-druzyna="d1" id="btn-bank-d1" title="Bank → Drużyna 1 (Q)">
-            <span class="bank-druzyna-nazwa" id="bank-d1-nazwa">D1</span><br>← Bank
-          </button>
-          <button class="przycisk przycisk-bank" data-druzyna="d2" id="btn-bank-d2" title="Bank → Drużyna 2 (W)">
-            <span class="bank-druzyna-nazwa" id="bank-d2-nazwa">D2</span><br>← Bank
-          </button>
-        </div>
-      </div>
+    <!-- Question display (widoczne gdy wybrano pytanie) -->
+    <div class="question-display" id="question-display" style="display:none">
+      <div class="question-label">Pytanie:</div>
+      <div class="question-text" id="question-text"></div>
     </div>
 
-    <!-- Prawa kolumna: ustawienia + akcje -->
-    <div class="kolumna kolumna-prawa">
-      <div class="sekcja">
-        <h3>Drużyny</h3>
-        <div class="druzyna-panel" id="druzyna-panel-1">
-          <input type="text" class="input-druzyna" id="input-d1-nazwa" placeholder="Nazwa drużyny 1">
-          <div class="druzyna-suma-panel" id="suma-d1">0</div>
-          <input type="number" class="input-druzyna-punkty" id="input-d1-punkty" placeholder="+/- punkty">
-          <button class="przycisk-maly" id="btn-d1-dodaj">Dodaj</button>
-        </div>
-        <div class="druzyna-panel" id="druzyna-panel-2">
-          <input type="text" class="input-druzyna" id="input-d2-nazwa" placeholder="Nazwa drużyny 2">
-          <div class="druzyna-suma-panel" id="suma-d2">0</div>
-          <input type="number" class="input-druzyna-punkty" id="input-d2-punkty" placeholder="+/- punkty">
-          <button class="przycisk-maly" id="btn-d2-dodaj">Dodaj</button>
-        </div>
+    <!-- Answers + bank + akcje (widoczne gdy wybrano pytanie) -->
+    <div class="play-area" id="play-area" style="display:none">
+
+      <!-- Lista odpowiedzi -->
+      <div class="answers-section">
+        <div class="answers-list" id="answers-list"></div>
       </div>
 
-      <div class="sekcja">
-        <h3>Profil gry</h3>
-        <select id="wybor-profilu" class="wybor-select"></select>
-        <div class="akcje-lista">
-          <button class="przycisk-maly" id="btn-otworz-plansze">📺 Otwórz planszę</button>
-          <button class="przycisk-maly" id="btn-nowa-gra">🔄 Nowa gra</button>
-          <button class="przycisk-maly" id="btn-zakoncz">🏁 Zakończ grę</button>
+      <!-- Bank + iksy info -->
+      <div class="info-bar">
+        <div class="info-bank">
+          <span class="info-label">Bank:</span>
+          <span class="info-value" id="bank-value">0</span>
         </div>
+        <div class="info-iksy" id="info-iksy"></div>
       </div>
 
-      <div class="sekcja">
-        <h3>Audio</h3>
-        <label class="audio-kontrola">
-          <input type="checkbox" id="audio-wlaczone" checked> Dźwięk
-        </label>
-        <input type="range" id="audio-glosnosc" min="0" max="1" step="0.05" value="0.7">
-        <span class="muted" id="audio-glosnosc-wartosc">70%</span>
-      </div>
-
-      <div class="sekcja">
-        <h3>Historia</h3>
-        <div class="historia-kontrola">
-          <button class="przycisk-maly" id="btn-cofnij" title="Cofnij (Ctrl+Z)">↶ Cofnij</button>
-          <button class="przycisk-maly" id="btn-przywroc" title="Przywróć (Ctrl+Y)">↷ Przywróć</button>
-        </div>
+      <!-- Strefa akcji — zmienia się zależnie od fazy -->
+      <div class="action-zone" id="action-zone">
+        <!-- Renderowane dynamicznie przez _renderActionZone() -->
       </div>
     </div>
   </div>
 
-  <!-- Overlay: pomoc -->
+  <!-- ===== Footer — drużyny ===== -->
+  <div class="footer-bar">
+    <div class="team-box" id="team-box-1">
+      <div class="team-color-bar" style="background: var(--kolor-d1)"></div>
+      <input type="text" class="team-name" id="input-d1-nazwa" placeholder="Drużyna 1">
+      <div class="team-score" id="suma-d1">0</div>
+    </div>
+    <div class="footer-actions">
+      <button class="btn-footer" id="btn-cofnij" title="Cofnij (Ctrl+Z)">↶ Cofnij</button>
+      <button class="btn-footer btn-footer-primary" id="btn-nastepna-runda" style="display:none">Następna runda →</button>
+    </div>
+    <div class="team-box" id="team-box-2">
+      <div class="team-color-bar" style="background: var(--kolor-d2)"></div>
+      <input type="text" class="team-name" id="input-d2-nazwa" placeholder="Drużyna 2">
+      <div class="team-score" id="suma-d2">0</div>
+    </div>
+  </div>
+
+  <!-- ===== Overlay: Ustawienia zaawansowane ===== -->
+  <div class="overlay" id="overlay-settings" style="display:none">
+    <div class="overlay-content overlay-wide">
+      <h2>⚙ Ustawienia zaawansowane</h2>
+      <div class="settings-grid">
+
+        <div class="settings-row">
+          <label>Profil gry:</label>
+          <select id="wybor-profilu" class="select-style"></select>
+        </div>
+
+        <div class="settings-row">
+          <label>Mnożnik rundy:</label>
+          <div class="mnoznik-buttons">
+            <button class="btn-small mnoznik-btn" data-m="1">×1</button>
+            <button class="btn-small mnoznik-btn" data-m="2">×2</button>
+            <button class="btn-small mnoznik-btn" data-m="3">×3</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <label>Punkty ręcznie — D1:</label>
+          <div class="manual-points">
+            <input type="number" id="input-d1-punkty" placeholder="+/- punkty" class="input-small">
+            <button class="btn-small" id="btn-d1-dodaj">Dodaj</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <label>Punkty ręcznie — D2:</label>
+          <div class="manual-points">
+            <input type="number" id="input-d2-punkty" placeholder="+/- punkty" class="input-small">
+            <button class="btn-small" id="btn-d2-dodaj">Dodaj</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <label>Cofnij iks:</label>
+          <button class="btn-small" id="btn-iks-cofnij">← Cofnij ostatni iks</button>
+        </div>
+
+        <div class="settings-row">
+          <label>Symuluj buzz (bez sprzętu):</label>
+          <div>
+            <button class="btn-small" id="btn-buzz1">Buzz D1 (F2)</button>
+            <button class="btn-small" id="btn-buzz2">Buzz D2 (F3)</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <label>Dźwięk:</label>
+          <div class="audio-controls">
+            <label><input type="checkbox" id="audio-wlaczone" checked> Włączony</label>
+            <input type="range" id="audio-glosnosc" min="0" max="1" step="0.05" value="0.7">
+            <span class="muted" id="audio-glosnosc-wartosc">70%</span>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <label>Akcje:</label>
+          <div class="actions-list">
+            <button class="btn-small" id="btn-otworz-plansze">📺 Otwórz planszę</button>
+            <button class="btn-small" id="btn-nowa-gra">🔄 Nowa gra</button>
+            <button class="btn-small" id="btn-zakoncz">🏁 Zakończ grę</button>
+            <button class="btn-small" id="btn-przywroc" title="Przywróć (Ctrl+Y)">↷ Przywróć</button>
+          </div>
+        </div>
+
+      </div>
+      <button class="btn-primary" id="btn-close-settings">Zamknij</button>
+    </div>
+  </div>
+
+  <!-- ===== Overlay: Pomoc ===== -->
   <div class="overlay" id="overlay-pomoc" style="display:none">
-    <div class="overlay-tresc">
+    <div class="overlay-content">
       <h2>Skróty klawiszowe</h2>
       <div class="skroty-lista">
         <div><kbd>Spacja</kbd> — Uzbrój buzzery</div>
-        <div><kbd>R</kbd> — Reset buzzerów</div>
+        <div><kbd>R</kbd> — Reset buzerów</div>
         <div><kbd>1</kbd>-<kbd>8</kbd> — Odsłoń odpowiedź</div>
         <div><kbd>X</kbd> — Dodaj iks</div>
         <div><kbd>→</kbd> / <kbd>PgDn</kbd> — Następne pytanie</div>
@@ -174,18 +203,18 @@
         <div><kbd>F9</kbd> — Debug</div>
         <div><kbd>F11</kbd> — Pełny ekran (plansza)</div>
       </div>
-      <button class="przycisk" onclick="document.getElementById('overlay-pomoc').style.display='none'">Zamknij</button>
+      <button class="btn-primary" id="btn-close-pomoc">Zamknij</button>
     </div>
   </div>
 
-  <!-- Overlay: wznów grę -->
+  <!-- ===== Overlay: Wznów grę ===== -->
   <div class="overlay" id="overlay-wznow" style="display:none">
-    <div class="overlay-tresc">
+    <div class="overlay-content">
       <h2>Znaleziono przerwaną grę</h2>
       <p>Czy chcesz wznowić czy zacząć nową?</p>
-      <div style="display:flex;gap:12px;justify-content:center;margin-top:16px">
-        <button class="przycisk przycisk-przedni" id="btn-wznow">Wznów</button>
-        <button class="przycisk" id="btn-nowa-zamiast">Nowa gra</button>
+      <div class="overlay-buttons">
+        <button class="btn-primary" id="btn-wznow">Wznów</button>
+        <button class="btn-secondary" id="btn-nowa-zamiast">Nowa gra</button>
       </div>
     </div>
   </div>
