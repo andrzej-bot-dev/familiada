@@ -35,29 +35,25 @@ export function ustawWlaczone(v) {
 export async function graj(nazwaPliku) {
   if (!wlaczone || !nazwaPliku) return;
 
-  // Spróbuj najpierw z wlasne/, potem z głównego folderu
-  const sciezki = [
-    `assets/audio/wlasne/${nazwaPliku}`,
-    `assets/audio/${nazwaPliku}`
-  ];
-
   let audio = AUDIO_CACHE.get(nazwaPliku);
 
   if (!audio) {
-    // Szukaj pliku
-    for (const sciezka of sciezki) {
-      try {
-        const res = await fetch(sciezka, { method: 'HEAD' });
-        if (res.ok) {
-          audio = new Audio(sciezka);
-          audio.preload = 'auto';
-          audio.volume = glosnosc;
-          AUDIO_CACHE.set(nazwaPliku, audio);
-          break;
-        }
-      } catch {
-        // próbuj dalej
+    // Spróbuj wlasne/ najpierw, potem główny folder — bez HEAD, po prostu twórz Audio
+    for (const sciezka of [`assets/audio/wlasne/${nazwaPliku}`, `assets/audio/${nazwaPliku}`]) {
+      audio = new Audio(sciezka);
+      audio.volume = glosnosc;
+      // Sprawdź czy plik istnieje (error event = brak pliku)
+      const ok = await new Promise((resolve) => {
+        audio.addEventListener('error', () => resolve(false), { once: true });
+        audio.addEventListener('canplay', () => resolve(true), { once: true });
+        // Timeout fallback
+        setTimeout(() => resolve(true), 500);
+      });
+      if (ok) {
+        AUDIO_CACHE.set(nazwaPliku, audio);
+        break;
       }
+      audio = null;
     }
   }
 
@@ -81,10 +77,12 @@ export function preload(mapowanie) {
   const unikalne = [...new Set(Object.values(mapowanie))];
   unikalne.forEach(nazwa => {
     if (!nazwa) return;
+    // Próbuj wlasne/ najpierw
     const sciezka = `assets/audio/${nazwa}`;
     const audio = new Audio(sciezka);
     audio.preload = 'auto';
     audio.volume = glosnosc;
+    // Nie czekamy — Audio przeglądarki ładuje w tle
     AUDIO_CACHE.set(nazwa, audio);
   });
 }

@@ -30,6 +30,7 @@ const elKoniecZwyciezca = $('koniec-zwyciezca');
 const elTytulWydarzenia = $('tytul-wydarzenia');
 
 let ostatniStan = null;
+let ostatniaLiczbaIksow = -1;  // Track do animacji IKS
 let czasownikKursora = null;
 
 // === Render planszy na podstawie stanu ===
@@ -141,16 +142,37 @@ function renderujPola(odpowiedzi) {
 }
 
 function renderujIksy(iksy) {
-  elIksy.innerHTML = '';
-  for (let i = 0; i < 3; i++) {
+  const liczba = iksy.length;
+
+  // Jeśli mniej X niż było — rundy się zmieniły, przebuduj
+  if (liczba < ostatniaLiczbaIksow) {
+    elIksy.innerHTML = '';
+    ostatniaLiczbaIksow = -1;
+  }
+
+  // Dodaj brakujące X (tylko nowe, bez przebudowy starych)
+  while (elIksy.children.length < 3) {
     const iks = document.createElement('div');
     iks.className = 'iks';
     iks.textContent = '✕';
-    if (i < iksy.length) {
-      iks.classList.add('aktywny');
-    }
     elIksy.appendChild(iks);
   }
+
+  // Oznacz aktywne
+  for (let i = 0; i < 3; i++) {
+    const el = elIksy.children[i];
+    if (i < liczba) {
+      if (!el.classList.contains('aktywny')) {
+        el.classList.add('aktywny', 'iks-animacja');
+        // Usuń klasę animacji po zakończeniu
+        setTimeout(() => el.classList.remove('iks-animacja'), 600);
+      }
+    } else {
+      el.classList.remove('aktywny', 'iks-animacja');
+    }
+  }
+
+  ostatniaLiczbaIksow = liczba;
 }
 
 function renderujFaze(stan) {
