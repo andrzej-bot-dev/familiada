@@ -297,6 +297,9 @@ class Panel {
   }
 
   nowaGra() {
+    if (this.transport?.polaczony) {
+      this.transport.wyslij('RESET');
+    }
     this.historia.reset();
     this.stan = nowaGra(this.konfiguracja);
     this.biezacePytanieIdx = -1;
@@ -314,6 +317,9 @@ class Panel {
   }
 
   zmienZestaw() {
+    if (this.transport?.polaczony) {
+      this.transport.wyslij('RESET');
+    }
     this.historia.reset();
     this.stan = nowaGra(this.konfiguracja);
     this.biezacePytanieIdx = -1;
@@ -395,6 +401,9 @@ class Panel {
   // ===================================================================
 
   _resetGry() {
+    if (this.transport?.polaczony) {
+      this.transport.wyslij('RESET');
+    }
     this.historia.reset();
     this.stan = nowaGra(this.konfiguracja);
     this.biezacePytanieIdx = -1;

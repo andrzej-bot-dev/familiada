@@ -301,11 +301,13 @@ export class Flow {
   nastepnaRunda(stan, biezacyIdx, pytaniaCount) {
     const nastepny = biezacyIdx + 1;
     if (nastepny >= pytaniaCount) {
-      return { dispatches: [{ typ: 'ZAKONCZ_GRE' }], koniecGry: true };
+      // Koniec gry — wyślij RESET żeby zgasić buzzery
+      return { dispatches: [{ typ: 'ZAKONCZ_GRE' }], koniecGry: true, transport: 'RESET' };
     }
     return {
       dispatches: [{ typ: 'NASTEPNA_RUNDA' }],
-      nastepnyIndeks: nastepny
+      nastepnyIndeks: nastepny,
+      transport: 'RESET'
     };
   }
 
@@ -313,7 +315,7 @@ export class Flow {
   // NOWA GRA — reset wszystkiego
   // ===================================================================
   nowaGra() {
-    return { dispatches: [], resetAll: true };
+    return { dispatches: [], resetAll: true, transport: 'RESET' };
   }
 
   // ===================================================================
