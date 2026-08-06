@@ -136,8 +136,8 @@ body.kursor-widoczny { cursor: default; }
 .iks.aktywny { opacity: 1; transform: scale(1); }
 .iks.iks-animacja { animation: iks-anim 0.6s ease-out; }
 @keyframes iks-anim {
-  0% { transform: scale(2) rotate(-15deg); opacity: 0; }
-  60% { transform: scale(1.2) rotate(5deg); }
+  0% { transform: scale(2.5) rotate(-15deg); opacity: 1; }
+  60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
   100% { transform: scale(1) rotate(0); opacity: 1; }
 }
 

@@ -154,6 +154,12 @@ class Panel {
       this._batchSync = true;
     }
 
+    // Audio — puszczaj PRZED dispatchami, żeby dźwięk grał równocześnie z animacją
+    if (result.audio) {
+      const audioMap = this.konfiguracja.audio?.mapowanie || {};
+      graj(audioMap[result.audio] || result.audio);
+    }
+
     // Dispatche
     if (result.dispatches?.length) {
       for (const akcja of result.dispatches) {
@@ -180,12 +186,6 @@ class Panel {
     // Transport
     if (result.transport && this.transport?.polaczony) {
       this.transport.wyslij(result.transport);
-    }
-
-    // Audio
-    if (result.audio) {
-      const audioMap = this.konfiguracja.audio?.mapowanie || {};
-      graj(audioMap[result.audio] || result.audio);
     }
 
     // Debug log
