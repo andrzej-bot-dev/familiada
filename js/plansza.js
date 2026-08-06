@@ -183,9 +183,10 @@ function renderujIksy(iksy) {
 }
 
 function renderujFaze(stan) {
-  // Komunikat o buzzowaniu
-  if (stan.fazaGry === STAN_GRY.POJEDYNEK && stan.ktoBuzznal) {
-    pokazKomunikat(`Drużyna ${stan.ktoBuzznal}!`, `druzyna-${stan.ktoBuzznal}`, 3000);
+  // Komunikat o buzzowaniu — pokazuj gdy GRA + BUZZED (faza zmienia się z POJEDYNEK na GRA przy buzz)
+  if (stan.fazaGry === STAN_GRY.GRA && stan.stanBuzzera === 'BUZZED' && stan.ktoBuzznal) {
+    const druzyna = stan.druzyny?.[stan.ktoBuzznal - 1];
+    pokazKomunikat(`${druzyna?.nazwa || 'Drużyna ' + stan.ktoBuzznal}!`, `druzyna-${stan.ktoBuzznal}`, 3000);
   } else if (stan.fazaGry === STAN_GRY.PRZEJECIE) {
     const [d1, d2] = stan.druzyny || [];
     const przejmujaca = stan.kontrola === d1?.id ? d2 : d1;

@@ -39,7 +39,7 @@ export function coTeraz(connected, maPytanie, stan, pojedynek) {
           ? pojedynek.pierwszyBuzz
           : (pojedynek.pierwszyBuzz === 1 ? 2 : 1);
         const d = stan.druzyny[druzynaIdx - 1];
-        return { ikona: '🔔', tytul: `🔔 Pojedynek — ${d?.nazwa || ''} odpowiada` };
+        return { ikona: '🔔', tytul: `Pojedynek — ${d?.nazwa || ''} odpowiada` };
       }
       const ktoGra = stan.druzyny.find(d => d.id === stan.kontrola) || stan.druzyny[0];
       if (czyWszystkoOdslonięte(stan)) {

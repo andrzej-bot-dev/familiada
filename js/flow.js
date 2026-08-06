@@ -64,8 +64,8 @@ export class Flow {
     this.przejecieOdpowiedz = null;
     return {
       dispatches: [{ typ: 'UZBROJ' }],
-      transport: 'a',
-      log: 'a wysłane (arm)'
+      transport: 'ARM',
+      log: 'ARM wysłane (arm)'
     };
   }
 
@@ -90,8 +90,8 @@ export class Flow {
     this.pojedynek = null;
     return {
       dispatches: [{ typ: 'RESET_BUZZER' }],
-      transport: 'r',
-      log: 'r wysłane (reset)'
+      transport: 'RESET',
+      log: 'RESET wysłane (reset)'
     };
   }
 
@@ -221,7 +221,7 @@ export class Flow {
   // ===================================================================
   cofnijIks(stan) {
     const dispatches = [{ typ: 'USUN_IKS' }];
-    if (stan.fazaGry === STAN_GRY.PRZEJECIE && stan.iksy.length < 3) {
+    if (stan.fazaGry === STAN_GRY.PRZEJECIE && stan.iksy.length <= 3) {
       dispatches.push({ typ: 'ZMIEN_FAZE', faza: STAN_GRY.GRA });
     }
     return { dispatches };

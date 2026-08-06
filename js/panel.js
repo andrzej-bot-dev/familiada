@@ -289,6 +289,9 @@ class Panel {
   }
 
   nastepnaRunda() {
+    if (this.stan?.bank > 0) {
+      if (!confirm(`Bank wynosi ${this.stan.bank} pkt i przepadnie! Przydziel go najpierw drużynie.\n\nKontynuować bez przydziału?`)) return;
+    }
     const result = this.flow.nastepnaRunda(this.stan, this.biezacePytanieIdx, this.pytania.length);
     this._wykonaj(result);
   }
@@ -419,7 +422,14 @@ class Panel {
   }
 
   _zapiszLocal() {
-    try { localStorage.setItem('familiada-stan', JSON.stringify(this.stan)); } catch {}
+    try {
+      localStorage.setItem('familiada-stan', JSON.stringify(this.stan));
+      localStorage.setItem('familiada-meta', JSON.stringify({
+        biezacePytanieIdx: this.biezacePytanieIdx,
+        aktywnyZestawIdx: this.aktywnyZestawIdx,
+        timestamp: Date.now()
+      }));
+    } catch {}
   }
 
   _sprobujWznow() {
@@ -429,18 +439,35 @@ class Panel {
       const stan = JSON.parse(zapisany);
       if (!stan?.druzyny?.length || !stan?.pytanieTekst) return;
 
+      const metaRaw = localStorage.getItem('familiada-meta');
+      const meta = metaRaw ? JSON.parse(metaRaw) : {};
+
       const overlay = document.getElementById('overlay-wznow');
       overlay.style.display = 'flex';
 
-      document.getElementById('btn-wznow').onclick = () => {
+      document.getElementById('btn-wznow').onclick = async () => {
         this.stan = stan;
         this.historia.reset();
+        // Przywróć indeks pytania i załaduj pytania ponownie
+        if (meta.aktywnyZestawIdx != null && meta.aktywnyZestawIdx >= 0) {
+          const zestaw = this.zestawy[meta.aktywnyZestawIdx];
+          if (zestaw) {
+            await wczytajZestaw(zestaw.plik);
+            this.pytania = dajPytania();
+            this.aktywnyZestawIdx = meta.aktywnyZestawIdx;
+            this.biezacePytanieIdx = meta.biezacePytanieIdx ?? -1;
+            this.ui.wypelnijZestawy(this.zestawy);
+            const sel = document.getElementById('wybor-zestawu');
+            if (sel) sel.value = String(meta.aktywnyZestawIdx);
+          }
+        }
         this.ui.render();
         this._wyslijStan();
         overlay.style.display = 'none';
       };
       document.getElementById('btn-nowa-zamiast').onclick = () => {
         localStorage.removeItem('familiada-stan');
+        localStorage.removeItem('familiada-meta');
         overlay.style.display = 'none';
       };
     } catch {}
